@@ -1,0 +1,27 @@
+schemaVersion: globalgrid2050.federation_manifest.v1
+repo: Ventusltd/data-federation-map-for-globalgrid2050-all-repos
+role: data
+owner: Ventus Ltd
+purpose: Authoritative backend metadata map for the GlobalGrid2050 repository federation.
+status: active
+dataProducts:
+  - name: federation_map_nodes
+    format: parquet/zstd
+    grain: one row per discovered repository or external source node per scan
+    key: scanId + nodeId
+    path: data/federation_map/current/nodes.parquet
+  - name: federation_map_edges
+    format: parquet/zstd
+    grain: one row per dependency edge per evidence source per scan
+    key: scanId + edgeId
+    path: data/federation_map/current/edges.parquet
+dependencies:
+  - repo: Ventusltd/globalgrid2050-hompage
+    type: governance_dependency
+    purpose: Reads the data discipline manual and supplies homepage visual consumer context.
+    cardinality: many-to-one
+workflows:
+  - file: .github/workflows/gridbot_federation_map_weekly.yml
+    purpose: Weekly and manual all-repos metadata scan.
+    schedule: weekly
+    dispatchable: true
