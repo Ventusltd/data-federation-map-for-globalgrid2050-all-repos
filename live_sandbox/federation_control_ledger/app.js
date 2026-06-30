@@ -1,240 +1,351 @@
-const D = FEDERATION_DATA;
-const RAG = { green: '#1faa59', amber: '#d99a18', red: '#cf3b3b', grey: '#66758f', blue: '#2f6fd0' };
-const TYPE_ICON = { data: 'DATA', ui: 'UI', homepage: 'HOME', source_archive: 'ARCH', unknown: 'REPO', external: 'EXT' };
-const BASE = 'https://github.com/Ventusltd/';
-const FED = BASE + 'data-federation-map-for-globalgrid2050-all-repos';
-const cardW = () => css('--card-w', 244);
-const cardH = () => css('--card-h', 122);
-const layerGap = () => css('--layer-gap', 78);
-const rowGap = () => css('--row-gap', 22);
-const pad = () => css('--pad', 18);
-const titleOffset = () => css('--title-offset', 42);
-let state = { q: '', rag: 'all', type: 'all', activeLayer: 0, selected: null };
+const ATLAS = FEDERATION_ATLAS;
+const FED_REPO = 'https://github.com/Ventusltd/data-federation-map-for-globalgrid2050-all-repos';
+const STATUS_COLOURS = ATLAS.statusColours;
+const nodeByIndex = new Map(ATLAS.nodes.map((node, index) => [index, { ...node, index }]));
+let map;
+let selectedNodeId = null;
 
-function css(name, fallback) {
-  const value = parseFloat(getComputedStyle(document.documentElement).getPropertyValue(name));
-  return Number.isFinite(value) ? value : fallback;
-}
-function esc(value) {
+function escapeHTML(value) {
   return String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
-function slug(label) { return `Ventusltd/${label}`; }
 
-const nodes = D.nodes.map((row, index) => ({
-  index,
-  id: slug(row[0]),
-  label: row[0],
-  repoType: row[1],
-  rag: row[2],
-  ragReason: row[3],
-  htmlUrl: row[4],
-  layer: 0,
-  x: 0,
-  y: 0
-}));
-const edges = D.edges.map(([from, to, type]) => ({ from, to, type, source: nodes[from], target: nodes[to] })).filter(e => e.source && e.target);
-const byIndex = new Map(nodes.map(n => [n.index, n]));
-
-function assignLayers() {
-  nodes.forEach(n => {
-    if (n.repoType === 'unknown' || n.repoType === 'ui') n.layer = 0;
-    else if (n.repoType === 'data') n.layer = 1;
-    else if (n.repoType === 'homepage') n.layer = 2;
-    else if (n.repoType === 'source_archive') n.layer = 3;
-    else if (n.repoType === 'external') n.layer = 4;
-    else n.layer = 0;
-  });
-  // keep the UI next to its data sources, but still visibly a consumer
-  const ui = nodes.find(n => n.label === 'gb-electricity-ui');
-  if (ui) ui.layer = 2;
-  // place the control ledger at the front of the data layer
-  const ledger = nodes.find(n => n.label.includes('federation-map'));
-  if (ledger) ledger.layer = 1;
+function statusColourExpression() {
+  return ['match', ['get', 'status'], 'green', STATUS_COLOURS.green, 'amber', STATUS_COLOURS.amber, 'red', STATUS_COLOURS.red, 'grey', STATUS_COLOURS.grey, 'blue', STATUS_COLOURS.blue, '#888888'];
 }
 
-function layerNames() {
-  return ['Repos & tools', 'Data ledger', 'Interfaces', 'Archive', 'External services'];
-}
-
-function filtered(n) {
-  const q = state.q.trim().toLowerCase();
-  const text = `${n.label} ${n.repoType} ${n.rag} ${n.ragReason}`.toLowerCase();
-  return (state.rag === 'all' || n.rag === state.rag) && (state.type === 'all' || n.repoType === state.type) && (!q || text.includes(q));
-}
-
-function orderWithinLayers(layers) {
-  for (let pass = 0; pass < 3; pass++) {
-    layers.forEach((items, layer) => {
-      items.sort((a, b) => {
-        const an = neighbourCentre(a, layer);
-        const bn = neighbourCentre(b, layer);
-        if (an !== bn) return an - bn;
-        return a.label.localeCompare(b.label);
-      });
-    });
-  }
-}
-function neighbourCentre(node, layer) {
-  const positions = [];
-  edges.forEach(e => {
-    if (e.source === node && e.target.layer !== layer) positions.push(e.target._order ?? 0);
-    if (e.target === node && e.source.layer !== layer) positions.push(e.source._order ?? 0);
-  });
-  if (!positions.length) return node._order ?? 0;
-  return positions.reduce((a, b) => a + b, 0) / positions.length;
-}
-
-function layout() {
-  assignLayers();
-  const names = layerNames();
-  const layers = names.map(() => []);
-  nodes.forEach(n => layers[n.layer].push(n));
-  layers.forEach(items => items.forEach((n, i) => n._order = i));
-  orderWithinLayers(layers);
-  const w = cardW(), h = cardH(), lg = layerGap(), rg = rowGap(), p = pad(), to = titleOffset();
-  let maxRows = 1;
-  layers.forEach((items, layer) => {
-    maxRows = Math.max(maxRows, items.length);
-    items.forEach((n, i) => {
-      n._order = i;
-      n.x = p + layer * (w + lg);
-      n.y = p + to + i * (h + rg);
-    });
-  });
+function staticStyle() {
   return {
-    layers,
-    names,
-    width: p * 2 + names.length * w + (names.length - 1) * lg,
-    height: p * 2 + to + maxRows * h + Math.max(0, maxRows - 1) * rg
+    version: 8,
+    glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
+    sources: {},
+    layers: [
+      { id: 'background', type: 'background', paint: { 'background-color': '#000000' } }
+    ]
   };
 }
 
-function evidenceLinks(n) {
-  const repo = n.htmlUrl || (n.repoType !== 'external' ? BASE + encodeURIComponent(n.label) : '');
-  const links = [];
-  links.push(`<a href="${FED}/blob/main/reports/FEDERATION_MAP_LATEST.md" target="_blank" rel="noopener">REPORT</a>`);
-  if (repo) links.push(`<a href="${repo}" target="_blank" rel="noopener">REPO</a>`);
-  if (repo && n.repoType === 'data') links.push(`<a href="${repo}/blob/main/DATA_CONTRACT.md" target="_blank" rel="noopener">CONTRACT</a>`);
-  return links.join('');
+function buildNodeGeoJSON() {
+  return {
+    type: 'FeatureCollection',
+    features: ATLAS.nodes.map((n, index) => ({
+      type: 'Feature',
+      id: n.id,
+      geometry: { type: 'Point', coordinates: n.coordinates },
+      properties: {
+        index,
+        id: n.id,
+        label: n.label,
+        repo_type: n.repo_type,
+        status: n.status,
+        status_reason: n.status_reason,
+        url: n.url,
+        importance_score: n.importance_score
+      }
+    }))
+  };
 }
 
-function edgeClass(type) {
-  if (type === 'data') return 'edge-data';
-  if (type === 'governance') return 'edge-governance';
-  if (type === 'archive') return 'edge-archive';
-  if (type === 'repo') return 'edge-repo';
-  return 'edge-external';
+function buildEdgeGeoJSON() {
+  return {
+    type: 'FeatureCollection',
+    features: ATLAS.edges.map(([from, to, type], index) => {
+      const a = nodeByIndex.get(from);
+      const b = nodeByIndex.get(to);
+      const mid = (a.coordinates[0] + b.coordinates[0]) / 2;
+      return {
+        type: 'Feature',
+        id: `edge-${index}`,
+        geometry: {
+          type: 'LineString',
+          coordinates: [a.coordinates, [mid, a.coordinates[1]], [mid, b.coordinates[1]], b.coordinates]
+        },
+        properties: {
+          index,
+          source: a.id,
+          target: b.id,
+          source_label: a.label,
+          target_label: b.label,
+          edge_type: type,
+          status: type === 'governance' ? 'amber' : 'green'
+        }
+      };
+    })
+  };
 }
 
-function render() {
-  const g = layout();
-  const map = document.getElementById('map');
-  const visible = new Set(nodes.filter(filtered).map(n => n.index));
-  map.style.width = `${g.width}px`;
-  map.style.height = `${g.height}px`;
-  map.innerHTML = '';
+function initClock() {
+  function tick() {
+    const now = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    document.getElementById('clock').textContent = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+    document.getElementById('date').textContent = `${pad(now.getDate())}/${pad(now.getMonth() + 1)}/${now.getFullYear()}`;
+    const target = new Date('2050-01-01T00:00:00Z');
+    const days = Math.max(0, Math.ceil((target - now) / 86400000));
+    document.getElementById('days').textContent = `${days} DAYS`;
+  }
+  tick();
+  setInterval(tick, 1000);
+}
 
-  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  svg.classList.add('connector-layer');
-  svg.setAttribute('width', g.width);
-  svg.setAttribute('height', g.height);
-  svg.setAttribute('viewBox', `0 0 ${g.width} ${g.height}`);
-  map.append(svg);
-
-  g.names.forEach((name, i) => {
-    const title = document.createElement('h2');
-    title.className = 'layer-title';
-    title.id = `layer-${i}`;
-    title.dataset.layer = String(i);
-    title.textContent = name;
-    title.style.left = `${pad() + i * (cardW() + layerGap())}px`;
-    title.style.top = `${pad()}px`;
-    map.append(title);
+function initMap() {
+  map = new maplibregl.Map({
+    container: 'map',
+    style: staticStyle(),
+    center: [0, 0],
+    zoom: 1.55,
+    minZoom: 0,
+    maxZoom: 9,
+    pitch: 0,
+    bearing: 0,
+    attributionControl: false,
+    dragRotate: false,
+    touchPitch: false,
+    renderWorldCopies: false
   });
 
-  edges.forEach(e => {
-    if (!visible.has(e.source.index) || !visible.has(e.target.index)) return;
-    const x1 = e.source.x + cardW(), y1 = e.source.y + cardH() / 2;
-    const x2 = e.target.x, y2 = e.target.y + cardH() / 2;
-    const mid = x1 + (x2 - x1) / 2;
-    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    path.setAttribute('d', `M ${x1} ${y1} C ${mid} ${y1}, ${mid} ${y2}, ${x2} ${y2}`);
-    path.setAttribute('class', `connector-path ${edgeClass(e.type)}`);
-    svg.append(path);
+  map.touchZoomRotate.disableRotation();
+
+  map.on('load', () => {
+    addSources();
+    addConfiguredLayers();
+    addSelectionLayers();
+    buildLayerControls();
+    buildSearch();
+    wireButtons();
+    fitAll(false);
   });
 
-  nodes.forEach(n => {
-    const card = document.createElement('article');
-    card.className = 'node-card';
-    if (!visible.has(n.index)) card.classList.add('is-dim');
-    if (state.selected === n.index) card.classList.add('is-highlight');
-    card.style.setProperty('--rag', RAG[n.rag] || RAG.grey);
-    card.style.left = `${n.x}px`;
-    card.style.top = `${n.y}px`;
-    card.innerHTML = `<div class="node-title">${esc(n.label)}</div><div class="node-meta">${esc(TYPE_ICON[n.repoType] || n.repoType)} · ${esc(n.repoType)} · ${esc(n.ragReason)}</div><span class="rag-pill">${esc(n.rag.toUpperCase())}</span><div class="chips">${evidenceLinks(n)}</div>`;
-    card.addEventListener('click', () => selectNode(n.index));
-    map.append(card);
+  map.on('error', event => {
+    console.error(event?.error || event);
+    document.getElementById('fatal-banner').style.display = 'block';
   });
-
-  renderNav(g);
-  document.getElementById('nodeCount').textContent = `${visible.size} / ${nodes.length}`;
-  document.getElementById('edgeCount').textContent = `${edges.filter(e => visible.has(e.source.index) && visible.has(e.target.index)).length} / ${edges.length}`;
-  document.getElementById('keyProof').textContent = D.key;
-  document.getElementById('findingBox').innerHTML = `<strong>Open findings shown, not hidden.</strong> ${esc(D.key)}. Governance edges to the temporary homepage remain visible until severed at source. The backend remains Parquet-first; future sectors can be served as layer manifests without loading every node at once.`;
 }
 
-function renderNav(g) {
-  const nav = document.getElementById('layerNav');
-  nav.innerHTML = g.names.map((name, i) => `<button type="button" data-layer="${i}" class="${i === state.activeLayer ? 'active' : ''}">${esc(name)}</button>`).join('');
-  nav.querySelectorAll('button').forEach(b => b.addEventListener('click', () => scrollLayer(Number(b.dataset.layer))));
-}
-function scrollLayer(i) {
-  state.activeLayer = i;
-  const wrap = document.querySelector('.map-wrap');
-  const target = document.getElementById(`layer-${i}`);
-  if (target) wrap.scrollTo({ left: Math.max(0, target.offsetLeft - 14), behavior: 'smooth' });
-  renderNav(layout());
-}
-function selectNode(index) {
-  state.selected = index;
-  const n = byIndex.get(index);
-  const related = edges.filter(e => e.from === index || e.to === index);
-  const panel = document.getElementById('detailPanel');
-  panel.hidden = false;
-  panel.innerHTML = `<button class="detail-close" type="button">Close</button><h2>${esc(n.label)}</h2><p><strong style="color:${RAG[n.rag]}">${esc(n.rag.toUpperCase())}</strong> · ${esc(n.repoType)} · ${esc(n.ragReason)}</p><p>${related.length} visible relationship rows in the sandbox data.</p><div class="chips">${evidenceLinks(n)}</div><p class="finding">Status is read-only evidence. Nothing here can change repository state.</p>`;
-  panel.querySelector('.detail-close').addEventListener('click', () => { panel.hidden = true; state.selected = null; render(); });
-  render();
-}
-function refit() {
-  const wrap = document.querySelector('.map-wrap');
-  wrap.scrollTo({ left: 0, top: 0, behavior: 'smooth' });
-}
-function setFocus(v) {
-  document.body.classList.toggle('focus-mode', v);
-  document.getElementById('fullscreenButton').textContent = v ? 'Exit' : 'Fullscreen';
-  setTimeout(render, 90);
+function addSources() {
+  map.addSource('nodes', { type: 'geojson', data: buildNodeGeoJSON(), promoteId: 'id' });
+  map.addSource('edges', { type: 'geojson', data: buildEdgeGeoJSON(), promoteId: 'index' });
 }
 
-const search = document.getElementById('searchInput');
-const rag = document.getElementById('ragFilter');
-const type = document.getElementById('typeFilter');
-search.addEventListener('input', e => { state.q = e.target.value; render(); });
-rag.addEventListener('change', e => { state.rag = e.target.value; render(); });
-type.addEventListener('change', e => { state.type = e.target.value; render(); });
-document.getElementById('refitButton').addEventListener('click', refit);
-document.getElementById('fullscreenButton').addEventListener('click', async () => {
-  if (document.fullscreenElement) { await document.exitFullscreen().catch(() => {}); setFocus(false); return; }
-  await document.documentElement.requestFullscreen?.().catch(() => {});
-  setFocus(true);
-});
-document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement) setFocus(false); });
-window.addEventListener('resize', render, { passive: true });
-document.querySelector('.map-wrap').addEventListener('scroll', () => {
-  const titles = [...document.querySelectorAll('.layer-title')];
-  const left = document.querySelector('.map-wrap').scrollLeft + 40;
-  let active = 0;
-  titles.forEach(t => { if (t.offsetLeft <= left) active = Number(t.dataset.layer); });
-  if (active !== state.activeLayer) { state.activeLayer = active; renderNav(layout()); }
-}, { passive: true });
+function addConfiguredLayers() {
+  for (const group of ATLAS.groups) {
+    for (const layer of group.layers) {
+      if (layer.type === 'line') addLineLayer(layer);
+      if (layer.type === 'point') addPointLayer(layer);
+    }
+  }
+  addLabelsLayer();
+}
 
-render();
+function addLineLayer(layer) {
+  map.addLayer({
+    id: layer.id,
+    type: 'line',
+    source: 'edges',
+    minzoom: layer.minzoom ?? 0,
+    filter: layer.filter,
+    layout: {
+      visibility: layer.visible_default ? 'visible' : 'none',
+      'line-cap': 'round',
+      'line-join': 'round'
+    },
+    paint: {
+      'line-color': layer.color,
+      'line-width': ['interpolate', ['linear'], ['zoom'], 0, 1, 3, 2.2, 7, 4.8],
+      'line-opacity': layer.id === 'edge_external' ? 0.28 : 0.74,
+      'line-dasharray': layer.id === 'edge_governance' ? [1.5, 1.1] : [1, 0]
+    }
+  });
+}
+
+function addPointLayer(layer) {
+  map.addLayer({
+    id: layer.id,
+    type: 'circle',
+    source: 'nodes',
+    minzoom: layer.minzoom ?? 0,
+    filter: layer.filter,
+    layout: { visibility: layer.visible_default ? 'visible' : 'none' },
+    paint: {
+      'circle-radius': ['interpolate', ['linear'], ['zoom'], 0, ['interpolate', ['linear'], ['get', 'importance_score'], 0, 5, 1, 12], 4, ['interpolate', ['linear'], ['get', 'importance_score'], 0, 9, 1, 24], 8, ['interpolate', ['linear'], ['get', 'importance_score'], 0, 15, 1, 42]],
+      'circle-color': statusColourExpression(),
+      'circle-opacity': 0.86,
+      'circle-stroke-color': '#000000',
+      'circle-stroke-width': ['interpolate', ['linear'], ['zoom'], 0, 1.2, 6, 3],
+      'circle-blur': ['case', ['==', ['get', 'repo_type'], 'external'], 0.15, 0.04]
+    }
+  });
+  map.on('click', layer.id, event => openNodePopup(event.features[0], event.lngLat));
+  map.on('mouseenter', layer.id, () => { map.getCanvas().style.cursor = 'pointer'; });
+  map.on('mouseleave', layer.id, () => { map.getCanvas().style.cursor = ''; });
+}
+
+function addLabelsLayer() {
+  map.addLayer({
+    id: 'node_labels',
+    type: 'symbol',
+    source: 'nodes',
+    minzoom: 1.4,
+    layout: {
+      'text-field': ['get', 'label'],
+      'text-font': ['Noto Sans Regular'],
+      'text-size': ['interpolate', ['linear'], ['zoom'], 1.4, 9, 6, 14],
+      'text-anchor': 'top',
+      'text-offset': [0, 1.2],
+      'text-allow-overlap': false,
+      'text-ignore-placement': false,
+      'symbol-sort-key': ['*', -1, ['get', 'importance_score']]
+    },
+    paint: {
+      'text-color': '#dce7ff',
+      'text-halo-color': '#000000',
+      'text-halo-width': 1.2,
+      'text-opacity': ['interpolate', ['linear'], ['zoom'], 1.4, 0.55, 4, 1]
+    }
+  });
+}
+
+function addSelectionLayers() {
+  map.addSource('selected_node', { type: 'geojson', data: emptyFeatureCollection() });
+  map.addLayer({
+    id: 'selected_node_ring',
+    type: 'circle',
+    source: 'selected_node',
+    paint: {
+      'circle-radius': ['interpolate', ['linear'], ['zoom'], 0, 18, 5, 38, 8, 62],
+      'circle-color': 'rgba(0,0,0,0)',
+      'circle-stroke-color': '#00ffff',
+      'circle-stroke-width': 2.5,
+      'circle-opacity': 0.9
+    }
+  });
+}
+
+function emptyFeatureCollection() {
+  return { type: 'FeatureCollection', features: [] };
+}
+
+function setSelectedNode(feature) {
+  selectedNodeId = feature?.properties?.id || null;
+  map.getSource('selected_node').setData(feature ? { type: 'FeatureCollection', features: [feature] } : emptyFeatureCollection());
+}
+
+function popupHTML(p) {
+  const repo = p.url ? `<a class="popup-btn popup-repo" href="${escapeHTML(p.url)}" target="_blank" rel="noopener">REPO</a>` : '';
+  const contract = p.url && p.repo_type === 'data' ? `<a class="popup-btn popup-report" href="${escapeHTML(p.url)}/blob/main/DATA_CONTRACT.md" target="_blank" rel="noopener">CONTRACT</a>` : '';
+  const report = `<a class="popup-btn popup-report" href="${FED_REPO}/blob/main/reports/FEDERATION_MAP_LATEST.md" target="_blank" rel="noopener">REPORT</a>`;
+  return `<div class="popup-title">${escapeHTML(p.label)}</div><div class="popup-meta">${escapeHTML(p.repo_type)} | ${escapeHTML(p.id)}</div><div class="popup-status"><span style="color:${STATUS_COLOURS[p.status] || '#888'}">● ${escapeHTML(p.status)}</span> ${escapeHTML(p.status_reason)}</div><div class="popup-btns">${report}${repo}${contract}</div>`;
+}
+
+function openNodePopup(feature, lngLat) {
+  setSelectedNode(feature);
+  new maplibregl.Popup({ closeButton: true, closeOnClick: false, maxWidth: '360px' })
+    .setLngLat(lngLat || feature.geometry.coordinates)
+    .setHTML(popupHTML(feature.properties))
+    .addTo(map);
+}
+
+function buildLayerControls() {
+  const wrap = document.getElementById('layer-controls');
+  wrap.innerHTML = '';
+  for (const group of ATLAS.groups) {
+    const box = document.createElement('div');
+    box.className = 'key-group';
+    box.innerHTML = `<div class="key-title">${escapeHTML(group.group)}</div>`;
+    for (const layer of group.layers) {
+      const item = document.createElement('label');
+      item.className = 'key-item';
+      item.style.color = layer.color;
+      item.innerHTML = `<input type="checkbox" ${layer.visible_default ? 'checked' : ''} data-layer="${escapeHTML(layer.id)}"><span class="layer-name">${escapeHTML(layer.label)}</span> <span class="layer-state" id="state-${escapeHTML(layer.id)}">[OK]</span>`;
+      box.appendChild(item);
+    }
+    wrap.appendChild(box);
+  }
+  wrap.querySelectorAll('input[data-layer]').forEach(input => {
+    input.addEventListener('change', () => {
+      const id = input.dataset.layer;
+      if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', input.checked ? 'visible' : 'none');
+      const s = document.getElementById(`state-${id}`);
+      if (s) s.textContent = input.checked ? '[OK]' : '[OFF]';
+    });
+  });
+}
+
+function buildSearch() {
+  const input = document.getElementById('search-input');
+  const results = document.getElementById('search-results');
+  const run = () => {
+    const q = input.value.trim().toLowerCase();
+    if (!q) { results.style.display = 'none'; results.innerHTML = ''; return; }
+    const matches = ATLAS.nodes.filter(n => `${n.label} ${n.repo_type} ${n.status} ${n.status_reason}`.toLowerCase().includes(q)).slice(0, 12);
+    results.innerHTML = matches.length ? matches.map(n => `<div class="search-result-item" data-id="${escapeHTML(n.id)}"><b>${escapeHTML(n.label)}</b><br>${escapeHTML(n.repo_type)} · ${escapeHTML(n.status)}</div>`).join('') : '<div class="search-no-results">No matching repository or source</div>';
+    results.style.display = 'block';
+  };
+  input.addEventListener('input', run);
+  input.addEventListener('keydown', event => { if (event.key === 'Enter') goToFirstSearchResult(); });
+  document.getElementById('search-btn').addEventListener('click', goToFirstSearchResult);
+  results.addEventListener('click', event => {
+    const item = event.target.closest('[data-id]');
+    if (item) flyToNode(item.dataset.id);
+  });
+}
+
+function goToFirstSearchResult() {
+  const first = document.querySelector('.search-result-item[data-id]');
+  if (first) flyToNode(first.dataset.id);
+}
+
+function flyToNode(id) {
+  const n = ATLAS.nodes.find(x => x.id === id);
+  if (!n) return;
+  document.getElementById('search-results').style.display = 'none';
+  map.flyTo({ center: n.coordinates, zoom: Math.max(map.getZoom(), 4.2), speed: 0.9, curve: 1.2 });
+  const features = map.querySourceFeatures('nodes', { sourceLayer: undefined }).filter(f => f.properties.id === id);
+  if (features[0]) {
+    setTimeout(() => openNodePopup(features[0], n.coordinates), 450);
+  }
+}
+
+function wireButtons() {
+  document.getElementById('btn-reset').addEventListener('click', () => fitAll(true));
+  document.getElementById('btn-export').addEventListener('click', exportCSV);
+  document.getElementById('btn-status').addEventListener('click', () => alert(ATLAS.manifest.key_note));
+  document.getElementById('btn-neighbourhood').addEventListener('click', () => alert(selectedNodeId ? 'Neighbourhood view is reserved for the next sandbox wave.' : 'Select a repository first.'));
+  document.getElementById('btn-sectors').addEventListener('click', () => alert('Sector manifests are reserved for the next sandbox wave.'));
+  document.getElementById('btn-fullscreen').addEventListener('click', enterFullscreen);
+  document.getElementById('btn-exit-fullscreen').addEventListener('click', exitFullscreen);
+  document.addEventListener('fullscreenchange', () => document.body.classList.toggle('fs-active', Boolean(document.fullscreenElement)));
+}
+
+function fitAll(animated = true) {
+  const bounds = new maplibregl.LngLatBounds();
+  ATLAS.nodes.forEach(n => bounds.extend(n.coordinates));
+  map.fitBounds(bounds, { padding: 52, duration: animated ? 700 : 0, maxZoom: 2.15 });
+}
+
+function enterFullscreen() {
+  const el = document.documentElement;
+  if (el.requestFullscreen) el.requestFullscreen().catch(() => document.body.classList.add('fs-active'));
+  else document.body.classList.add('fs-active');
+}
+
+function exitFullscreen() {
+  if (document.fullscreenElement) document.exitFullscreen().catch(() => document.body.classList.remove('fs-active'));
+  else document.body.classList.remove('fs-active');
+}
+
+function exportCSV() {
+  const rows = [['id','label','repo_type','status','status_reason','importance_score','url'], ...ATLAS.nodes.map(n => [n.id, n.label, n.repo_type, n.status, n.status_reason, n.importance_score, n.url])];
+  const csv = rows.map(r => r.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'globalgrid2050-federation-nodes.csv';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+initClock();
+initMap();
