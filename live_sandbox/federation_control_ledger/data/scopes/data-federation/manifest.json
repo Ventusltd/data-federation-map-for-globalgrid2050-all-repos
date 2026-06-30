@@ -1,0 +1,29 @@
+{
+  "schema_version": "atlas-cartridge-v0.2",
+  "generated_utc": "2026-06-30T21:15:00Z",
+  "public_title": "Data Federation Repository Internals",
+  "public_strapline": "First child scope for the repository board",
+  "scope": {
+    "id": "data-federation-repo-internals",
+    "label": "data-federation-map-for-globalgrid2050-all-repos",
+    "scope_type": "repository_internal"
+  },
+  "counts": {
+    "nodes": 14,
+    "edges": 15,
+    "sectors": 4
+  },
+  "key_law_status": "SANDBOX_CHILD_SCOPE_DECLARED",
+  "key_note": "First recursive cartridge. Nodes are declared from known repository paths and public pages. Automated scanner is a later wave.",
+  "unresolved_findings": [
+    "repo_internals_scanner_not_yet_automated",
+    "child_scope_is_hand_declared_sandbox_seed"
+  ],
+  "tier": "geojson",
+  "sources": {
+    "nodes": "nodes.json",
+    "edges": "edges.json",
+    "layers": "layers.json",
+    "sectors": "sectors.json"
+  }
+}
