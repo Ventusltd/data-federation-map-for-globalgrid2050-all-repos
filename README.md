@@ -14,6 +14,8 @@ This repo is the source-of-truth data product for the GlobalGrid2050 federation 
 
 It is not the public homepage. It is not a UI repo. It is the backend metadata database that records which repositories exist, what role each repo has, and how repositories depend on each other.
 
+The internal federation dashboard is `Jean Luc Federation Dashboard`, specified in `jean-luc/README.md`.
+
 ## Binding local requirements
 
 The federation ledger scope is the approved employer's requirement. Build to it and do not exceed it.
@@ -103,6 +105,10 @@ The workflow is `.github/workflows/gridbot_federation_map_weekly.yml`.
 
 It runs weekly and manually, uses `GRIDBOT_PAT`, writes Parquet outputs and reports, and commits only after verification passes.
 
+## Jean Luc Federation Dashboard
+
+Jean Luc is the internal federation dashboard. It must read from verified Parquet-derived JSON only. It may render cards, connectors, filters and drill-downs, but it must not infer truth or hand-author status colours.
+
 ## Not yet complete
 
 This is the first DNA script. It is not a perfect dependency graph yet.
@@ -115,5 +121,5 @@ formal dependency contracts
 workflow parsing
 package dependency parsing
 sharded API traversal
-internal dashboard from verified Parquet
+Jean Luc Federation Dashboard from verified Parquet
 ```
