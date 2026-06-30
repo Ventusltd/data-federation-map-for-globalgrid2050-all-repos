@@ -1,10 +1,24 @@
 # data-federation-map-for-globalgrid2050-all-repos
 
-AI READ FIRST: This repository follows the GlobalGrid2050 Data Discipline Manual in `Ventusltd/globalgrid2050-hompage/docs/DATA_DISCIPLINE_MANUAL.md` and the fast anchor in `Ventusltd/globalgrid2050-hompage/anchor_AI_MUST_READ.md`.
+AI READ FIRST: Read the local binding requirements before changing this repository:
+
+```text
+every-drop-is-the-ocean/FEDERATION_LEDGER_SCOPE_EMPLOYERS_REQUIREMENT.md
+every-drop-is-the-ocean/AUDIT_AND_COMMIT_EMPLOYERS_REQUIREMENT.md
+every-drop-is-the-ocean/README.md
+```
+
+Historical homepage doctrine is context only. This ledger is permanent and self-sufficient.
 
 This repo is the source-of-truth data product for the GlobalGrid2050 federation systems map.
 
 It is not the public homepage. It is not a UI repo. It is the backend metadata database that records which repositories exist, what role each repo has, and how repositories depend on each other.
+
+## Binding local requirements
+
+The federation ledger scope is the approved employer's requirement. Build to it and do not exceed it.
+
+The audit-and-commit requirement governs every workflow change: audit before apply, report always, prove on the declared key, and keep a clean evidence trail.
 
 ## Purpose
 
@@ -101,5 +115,5 @@ formal dependency contracts
 workflow parsing
 package dependency parsing
 sharded API traversal
-homepage visual single-line diagram generation
+internal dashboard from verified Parquet
 ```
