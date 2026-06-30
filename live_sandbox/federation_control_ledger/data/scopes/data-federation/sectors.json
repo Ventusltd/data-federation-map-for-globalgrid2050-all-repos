@@ -1,0 +1,9 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {"type":"Feature","id":"sector-ui","geometry":{"type":"Point","coordinates":[2,1]},"properties":{"id":"sector-ui","label":"Live UI and renderer","level":0,"node_count":4,"edge_count":4,"min_zoom":0,"summary_status":"green"}},
+    {"type":"Feature","id":"sector-data","geometry":{"type":"Point","coordinates":[4,1]},"properties":{"id":"sector-data","label":"Cartridge data","level":0,"node_count":4,"edge_count":5,"min_zoom":0,"summary_status":"amber"}},
+    {"type":"Feature","id":"sector-docs","geometry":{"type":"Point","coordinates":[4,3]},"properties":{"id":"sector-docs","label":"Reports and doctrine","level":0,"node_count":3,"edge_count":3,"min_zoom":0,"summary_status":"green"}},
+    {"type":"Feature","id":"sector-services","geometry":{"type":"Point","coordinates":[5,1]},"properties":{"id":"sector-services","label":"Hosting and workflow services","level":0,"node_count":2,"edge_count":3,"min_zoom":0,"summary_status":"blue"}}
+  ]
+}
