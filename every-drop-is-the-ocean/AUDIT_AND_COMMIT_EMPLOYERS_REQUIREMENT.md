@@ -69,3 +69,53 @@ The monolith was not undisciplined. It contained a real, working audit-then-appl
 6.4 Reports carry a schema version, a generated timestamp, the method version, and the direction or sign or label contract where the data has one. Provenance travels with the artifact.
 
 6.5 Use conventional commit prefixes consistently, docs, build, data, fix, as the monolith's 571 docs and 355 gridbot commits show. One prefix vocabulary across the federation.
+
+## 7. The rollback law
+
+7.1 Every apply must be reversible. The report states the rollback method explicitly, normally revert the apply commit.
+
+7.2 An apply that touches a target must not destroy the evidence needed to undo it. Existing files that are not the target are not edited. The monolith reference method states it plainly: revert the apply commit, existing aggregate files are not edited.
+
+## 8. The separation-of-duties law
+
+8.1 No assistant marks its own homework. The executor builds and runs audit and apply. The independent auditor clones read-only and re-tests the declared checks on the landed result. The human approves the scope and holds the apply trigger.
+
+8.2 The audit a workflow runs on itself is the first line. The independent clone re-test is the second line. The monolith proved the first line alone lets shared-assumption bugs through. Both lines are required.
+
+8.3 The independent auditor verifies from a clean clone, with independently written checks, never sharing the executor's validation code.
+
+## 9. The seven-step change-control gate
+
+9.1 Every change follows: one, audit reads current state, read only. Two, produce a data log of current state as the evidence baseline, committed as a report. Three, the executor writes the proposal as a draft scope. Four, the human reads and approves the scope, the gate. Five, the audit runs against the approved scope. Six, the executor checks the audit against the agreed scope and gives an executive summary. Seven, the final surgical commit, limited to the agreed files.
+
+9.2 No direct commit that skips the gate. The monolith's thousands of unattended auto-commits are the anti-pattern this gate exists to prevent.
+
+9.3 Reports commit separately from code at every step. Every repo keeps a DEPENDENCIES file updated at the final commit.
+
+## 10. The data-acquisition exception, still audited
+
+10.1 Where a data-science process acquires data, the parquet and DuckDB key-law governs the acquisition. But the decision to acquire and the proof of what landed both still pass through audit.
+
+10.2 First audit whether the data already exists. If it does, wire to it, acquire nothing. If it does not, declare where the raw data comes from, which API, compare to how the monolith sourced it, and design the acquisition around the current discipline before fetching. Audit governs whether, the pipeline governs how.
+
+## 11. The sprawl-prevention law
+
+11.1 Keep a minimal workflow set per repo. The federation does not carry 215 workflows. Ideally a small number per repo, each proven, each audited, each independently verifiable.
+
+11.2 No unattended commit without passing the same gate a human change would. No scheduled auto-commit that writes data without the declared checks turning the run red on breach.
+
+11.3 Workflow proliferation is itself a violation. Before adding a workflow, ask whether an existing one should be extended. The monolith became unreasonable by accretion, not by any single bad workflow.
+
+## 12. Definition of done for any workflow under this requirement
+
+12.1 It has mode audit default and apply, and commit_reports.
+12.2 It is workflow_dispatch, narrow permissions, a concurrency group.
+12.3 It writes a paired md and json report to the fixed reports location, uploaded as an artifact on every run.
+12.4 It commits reports separately from code, audit-mode commit carries no target changes, apply-mode commit carries target plus report.
+12.5 Its script builds the plan in both modes and writes targets only under apply.
+12.6 Its checks test the real law on the real key, exact-equality only on invariants, floors on growing quantities, and the run returns success only if all checks pass.
+12.7 Its names match, feature to workflow to script, and its commit message carries feature and mode.
+12.8 Its report states the rollback method.
+12.9 The independent auditor can re-test its declared checks from a clean clone and reach the same pass or fail.
+
+This requirement is the monolith's hard-won discipline, distilled. The method it proved is kept. The sprawl it suffered is refused. Audit before apply, report always, prove on the key, commit reports apart from code, no homework marked by its own author, and a minimal set of workflows each independently verifiable. One true drop before ocean-scale claims.
