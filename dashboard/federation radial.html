@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Ventus Global Grid 2050 · Dependency Radial</title>
+<style>
+  :root{
+    --bg:#0b0d12;--panel:#12151c;--line:#262b36;--text:#eef2fb;--muted:#9aa3b5;--cyan:#00e5ff;
+    --e-data:#00e5ff;--e-governance:#b47cff;--e-archive:#7da0c8;--e-external:#5f76a4;--e-repo:#b8ccff;--e-workflow:#00ffff;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{background:radial-gradient(1200px 700px at 50% -10%,rgba(0,229,255,.06),transparent 60%),var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;display:flex;flex-direction:column;height:100dvh;overflow:hidden}
+  .bar{display:flex;align-items:center;gap:10px 14px;flex-wrap:wrap;padding:max(env(safe-area-inset-top),12px) 16px 10px;border-bottom:1px solid var(--line)}
+  .brand{display:flex;flex-direction:column;line-height:1.05}
+  .brand .ey{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.6rem;letter-spacing:.22em;text-transform:uppercase;color:var(--cyan)}
+  .brand h1{margin:2px 0 0;font-size:1rem;font-weight:650}
+  .pick{display:flex;align-items:center;gap:8px;flex:1 1 240px;min-width:0}
+  .pick label{font-family:ui-monospace,monospace;font-size:.58rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);flex:none}
+  select{flex:1 1 auto;min-width:0;background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:9px 32px 9px 12px;font:inherit;font-size:.85rem;cursor:pointer;appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 16px) center,calc(100% - 11px) center;background-size:5px 5px,5px 5px;background-repeat:no-repeat}
+  select:focus-visible{outline:none;border-color:var(--cyan)}
+  .controls{display:flex;align-items:center;gap:8px 14px;flex-wrap:wrap;padding:8px 16px 4px}
+  .grouplabel{font-family:ui-monospace,monospace;font-size:.55rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;flex:none}
+  .seg button{border:0;background:transparent;color:var(--muted);font:inherit;font-size:.72rem;padding:7px 13px;cursor:pointer;white-space:nowrap}
+  .seg button[aria-pressed="true"]{background:rgba(0,229,255,.16);color:var(--text)}
+  .seg button.gh[aria-pressed="true"]{background:rgba(184,204,255,.18)}
+  .seg button.ext[aria-pressed="true"]{background:rgba(95,118,164,.28)}
+  .seg button:disabled{opacity:.4;cursor:not-allowed}
+  .count{font-family:ui-monospace,monospace;font-size:.72rem;color:var(--muted);margin-left:auto}
+  .srctag{margin-left:auto;font-family:ui-monospace,monospace;font-size:.56rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:2px 8px}
+  .srctag.live{color:var(--cyan);border-color:rgba(0,229,255,.4)}
+  .count b{color:var(--text);font-weight:600}
+  .crumbs{display:flex;align-items:center;gap:6px;padding:2px 16px 0;font-family:ui-monospace,monospace;font-size:.66rem;color:var(--muted);min-height:18px}
+  .crumbs a{color:var(--cyan);cursor:pointer;text-decoration:none}
+  .crumbs .sep{opacity:.5}
+  .hint{padding:4px 16px 8px;font-family:ui-monospace,monospace;font-size:.62rem;color:var(--muted)}
+  .hint b{color:var(--text);font-weight:600}
+  .stage{flex:1;min-height:0;position:relative}
+  .wires{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+  .spoke{stroke-width:1.7;fill:none;opacity:.9}
+  .overlay{position:absolute;inset:0}
+  .card{border:1px solid var(--line);border-radius:12px;background:linear-gradient(160deg,rgba(255,255,255,.05),rgba(255,255,255,.012));padding:9px 11px;display:flex;flex-direction:column;gap:5px}
+  .card .row{display:flex;align-items:center;gap:7px}
+  .badge{font-family:ui-monospace,monospace;font-size:.55rem;letter-spacing:.07em;border:1px solid var(--line);border-radius:6px;padding:2px 5px;color:var(--muted);flex:none}
+  .name{font-size:.82rem;font-weight:600;line-height:1.15;overflow-wrap:anywhere}
+  .dot{width:9px;height:9px;border-radius:50%;flex:none;margin-left:auto;box-shadow:0 0 8px currentColor}
+  .reason{font-size:.66rem;color:var(--muted);line-height:1.2}
+  .relrow{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .reltag{font-family:ui-monospace,monospace;font-size:.55rem;letter-spacing:.05em;text-transform:uppercase;padding:1px 7px;border-radius:999px;border:1px solid currentColor}
+  .arrow{font-family:ui-monospace,monospace;font-size:.62rem;color:var(--muted)}
+  .go{font-family:ui-monospace,monospace;font-size:.6rem;color:var(--cyan);margin-left:auto}
+  .is-center{border-color:var(--cyan);box-shadow:0 0 0 1px rgba(0,229,255,.22),0 0 26px rgba(0,229,255,.12)}
+  .is-center .name{font-size:.92rem}
+  .contents{align-self:flex-start;margin-top:2px;font-family:ui-monospace,monospace;font-size:.62rem;color:var(--cyan);border:1px solid rgba(0,229,255,.4);border-radius:999px;padding:3px 10px;background:rgba(0,229,255,.08);cursor:pointer}
+  .inert{opacity:.34}
+  .overlay.radial .place{position:absolute;transform:translate(-50%,-50%);cursor:pointer}
+  .overlay.radial .place.is-center{cursor:default}
+  .overlay.radial .place .card{width:100%;height:100%}
+  .overlay.list{overflow-y:auto;overflow-x:hidden;padding:12px 16px max(env(safe-area-inset-bottom),16px)}
+  .overlay.list .focuswrap .card{cursor:default}
+  .overlay.list .sect{font-family:ui-monospace,monospace;font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:14px 2px 8px}
+  .overlay.list .branch{position:relative;padding-left:20px}
+  .overlay.list .branch::before{content:"";position:absolute;left:7px;top:-6px;bottom:14px;width:2px;background:var(--line)}
+  .overlay.list .twig{position:relative;margin-bottom:8px;cursor:pointer}
+  .overlay.list .twig::before{content:"";position:absolute;left:-13px;top:24px;width:13px;height:2px;background:var(--twig,var(--line))}
+  .overlay.list .twig .card{border-left:3px solid var(--twig,var(--line))}
+  .overlay.list .empty{color:var(--muted);font-size:.78rem;padding:4px 2px}
+  .legend{position:absolute;left:14px;bottom:10px;display:flex;flex-wrap:wrap;gap:5px 12px;max-width:70%;pointer-events:none}
+  .legend span{display:flex;align-items:center;gap:6px;font-family:ui-monospace,monospace;font-size:.58rem;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+  .legend i{width:15px;height:0;border-top:2px solid;display:inline-block}
+  .legend.hide{display:none}
+</style>
+</head>
+<body>
+  <div class="bar">
+    <div class="brand"><span class="ey">Ventus · Global Grid 2050</span><h1>Dependency Radial</h1></div>
+    <div class="pick"><label for="focus">Focus</label><select id="focus"></select></div>
+    <div class="count" id="count"></div>
+  </div>
+  <div class="controls">
+    <span class="grouplabel">Show</span>
+    <div class="seg" id="relSeg" role="group" aria-label="Relationship direction">
+      <button data-mode="both" aria-pressed="true">Both</button>
+      <button data-mode="out" aria-pressed="false">Outgoing</button>
+      <button data-mode="in" aria-pressed="false">Incoming</button>
+    </div>
+    <span class="grouplabel">Tap does</span>
+    <div class="seg" id="actSeg" role="group" aria-label="Tap action">
+      <button data-act="explore" aria-pressed="true">Explore</button>
+      <button class="gh" data-act="github" aria-pressed="false">GitHub</button>
+      <button class="ext" data-act="external" aria-pressed="false">External</button>
+      <button data-act="status" aria-pressed="false" disabled title="Enables when the page reads live scanner data">Status</button>
+    </div>
+    <span class="srctag" id="srcTag" title="Data source for this view">snapshot</span>
+  </div>
+  <div class="crumbs" id="crumbs"></div>
+  <div class="hint" id="hint"></div>
+  <div class="stage">
+    <svg class="wires" id="wires" aria-hidden="true"></svg>
+    <div class="overlay" id="overlay"></div>
+    <div class="legend hide" id="legend"></div>
+  </div>
+
+<script>
+const GH_BASE="https://github.com/Ventusltd/data-federation-map-for-globalgrid2050-all-repos";
+const LIVE_PAGE="https://ventusltd.github.io/data-federation-map-for-globalgrid2050-all-repos/live_sandbox/federation_control_ledger/";
+// External system homepages (public official sites; edit if you prefer different targets).
+const EXT_HOME={"DuckDB":"https://duckdb.org","Parquet":"https://parquet.apache.org","GitHub Actions":"https://github.com/features/actions","Elexon BMRS API":"https://bmrs.elexon.co.uk","GitHub Pages":"https://pages.github.com"};
+const PAGE_HOME={"globalgrid2050":"https://globalgrid2050.com/","globalgrid2050-hompage":"https://globalgrid2050.com/","data-federation-map-for-globalgrid2050-all-repos":LIVE_PAGE};
+
+// ---- ROOT scope (the federation) ----
+const ROOT_NODES=[
+  {label:"data-federation-map-for-globalgrid2050-all-repos",type:"data",rag:"green",reason:"active federation repository",child:"data-federation"},
+  {label:"data-gb-electricity",type:"data",rag:"red",reason:"contract finding surfaced"},
+  {label:"data-interconnectors",type:"data",rag:"red",reason:"contract finding surfaced"},
+  {label:"gb-electricity-ui",type:"ui",rag:"red",reason:"depends on verified data repos"},
+  {label:"globalgrid2050",type:"source_archive",rag:"blue",reason:"source archive"},
+  {label:"globalgrid2050-hompage",type:"homepage",rag:"green",reason:"homepage dependency surfaced"},
+  {label:"pandapower",type:"unknown",rag:"grey",reason:"not fully classified"},
+  {label:"Podcast-transcripts",type:"unknown",rag:"amber",reason:"workflow finding"},
+  {label:"pv-arc-protection-circuit",type:"unknown",rag:"amber",reason:"workflow finding"},
+  {label:"Solar-PV-Hybrid-and-off-grid",type:"unknown",rag:"amber",reason:"workflow finding"},
+  {label:"solar-repowering-whitepaper",type:"unknown",rag:"amber",reason:"workflow finding"},
+  {label:"youengineer-code-review",type:"ui",rag:"amber",reason:"reference UI pattern source"},
+  {label:"DuckDB",type:"external",rag:"blue",reason:"proof query engine"},
+  {label:"Parquet",type:"external",rag:"blue",reason:"columnar proof store"},
+  {label:"Elexon BMRS API",type:"external",rag:"blue",reason:"external electricity source"},
+  {label:"GitHub Actions",type:"external",rag:"blue",reason:"static build runner"},
+];
+const ROOT_EDGES=[
+  [0,12,"external"],[0,13,"external"],[0,5,"governance"],[0,15,"external"],[0,14,"external"],
+  [1,4,"archive"],[1,5,"governance"],[1,14,"external"],[1,15,"external"],[1,12,"external"],[1,13,"external"],
+  [2,4,"archive"],[2,5,"governance"],[2,14,"external"],[2,13,"external"],[2,1,"repo"],[2,3,"repo"],[2,15,"external"],[2,12,"external"],
+  [3,1,"data"],[3,2,"data"],[3,5,"governance"],[3,15,"external"],
+  [4,14,"external"],[4,15,"external"],
+  [5,14,"external"],[5,0,"data"],[5,1,"data"],[5,2,"data"],[5,3,"repo"],[5,4,"archive"],[5,12,"external"],[5,13,"external"],[5,15,"external"],
+  [6,15,"external"],
+];
+// Root: compute gh (repo nodes) and ext (externals + declared pages)
+function applyRootLinks(nodes){nodes.forEach(n=>{n.gh=n.type==="external"?null:`https://github.com/Ventusltd/${n.label}`;n.ext=EXT_HOME[n.label]||PAGE_HOME[n.label]||null;});return nodes;}
+applyRootLinks(ROOT_NODES);
+
+// ---- CHILD scope: data-federation repo internals (declared, verified paths) ----
+const CHILD_NODES=[
+  {label:"data-federation repo",type:"data",rag:"green",reason:"root of this child scope",gh:GH_BASE+"/tree/main"},
+  {label:"live dashboard page",type:"ui",rag:"green",reason:"GitHub Pages browser UI in this repo",gh:GH_BASE+"/tree/main/live_sandbox/federation_control_ledger",ext:LIVE_PAGE},
+  {label:"index.html",type:"ui",rag:"green",reason:"page shell for the board",gh:GH_BASE+"/blob/main/live_sandbox/federation_control_ledger/index.html"},
+  {label:"app.js",type:"ui",rag:"green",reason:"board renderer and interaction logic",gh:GH_BASE+"/blob/main/live_sandbox/federation_control_ledger/app.js"},
+  {label:"style.css",type:"ui",rag:"green",reason:"board visual system",gh:GH_BASE+"/blob/main/live_sandbox/federation_control_ledger/style.css"},
+  {label:"data cartridge folder",type:"data",rag:"green",reason:"manifest, nodes, edges, layers, sectors",gh:GH_BASE+"/tree/main/live_sandbox/federation_control_ledger/data"},
+  {label:"data/manifest.json",type:"data",rag:"amber",reason:"root cartridge manifest; key still flagged",gh:GH_BASE+"/blob/main/live_sandbox/federation_control_ledger/data/manifest.json"},
+  {label:"data/nodes.json",type:"data",rag:"green",reason:"repo and source nodes for the board",gh:GH_BASE+"/blob/main/live_sandbox/federation_control_ledger/data/nodes.json"},
+  {label:"data/edges.json",type:"data",rag:"green",reason:"relationship lines for the board",gh:GH_BASE+"/blob/main/live_sandbox/federation_control_ledger/data/edges.json"},
+  {label:"reports folder",type:"unknown",rag:"green",reason:"scan reports and evidence",gh:GH_BASE+"/tree/main/reports"},
+  {label:"FEDERATION_MAP_LATEST.md",type:"unknown",rag:"green",reason:"latest human-readable scan report",gh:GH_BASE+"/blob/main/reports/FEDERATION_MAP_LATEST.md"},
+  {label:"every-drop-is-the-ocean",type:"unknown",rag:"green",reason:"canonical doctrine and addenda",gh:GH_BASE+"/tree/main/every-drop-is-the-ocean"},
+  {label:"GitHub Pages",type:"external",rag:"blue",reason:"static public hosting",ext:LIVE_PAGE},
+  {label:"GitHub Actions",type:"external",rag:"blue",reason:"future scanner and validation runner",ext:EXT_HOME["GitHub Actions"],gh:GH_BASE+"/actions"},
+];
+const CHILD_EDGES=[[0,1,"repo"],[1,2,"repo"],[1,3,"repo"],[1,4,"repo"],[1,5,"data"],[3,5,"data"],[5,6,"data"],[5,7,"data"],[5,8,"data"],[0,9,"governance"],[9,10,"governance"],[0,11,"governance"],[1,12,"external"],[0,13,"external"],[3,13,"external"]];
+
+const SCOPES={
+  "root":{label:"Federation",nodes:ROOT_NODES,edges:ROOT_EDGES},
+  "data-federation":{label:"data-federation internals",nodes:CHILD_NODES,edges:CHILD_EDGES},
+};
+
+const RAG={green:"#00ff88",amber:"#ffcc00",red:"#ff5555",blue:"#3aa0ff",grey:"#9298a6"};
+const ECSS={data:"#00e5ff",governance:"#b47cff",archive:"#7da0c8",external:"#5f76a4",repo:"#b8ccff",workflow:"#00ffff"};
+const BADGE={data:"DB",ui:"UI",homepage:"WEB",source_archive:"SRC",unknown:"REPO",external:"EXT"};
+const REL={data:"data",governance:"governance",archive:"archive",external:"external",repo:"repo ref",workflow:"workflow"};
+const SVGNS="http://www.w3.org/2000/svg";
+
+let mode="both", action="explore", current=0, scopeKey="root", stack=[];
+const sel=document.getElementById("focus");
+const wires=document.getElementById("wires");
+const overlay=document.getElementById("overlay");
+const legend=document.getElementById("legend");
+const elCount=document.getElementById("count");
+const elCrumbs=document.getElementById("crumbs");
+const elHint=document.getElementById("hint");
+
+function S(){return SCOPES[scopeKey];}
+function rebuildSelect(){sel.innerHTML="";S().nodes.forEach((n,i)=>{const o=document.createElement("option");o.value=i;o.textContent=n.label;sel.appendChild(o);});sel.value=current;}
+sel.addEventListener("change",()=>{current=+sel.value;draw();});
+document.querySelectorAll("#relSeg button").forEach(b=>b.addEventListener("click",()=>{mode=b.dataset.mode;document.querySelectorAll("#relSeg button").forEach(x=>x.setAttribute("aria-pressed",String(x===b)));draw();}));
+document.querySelectorAll("#actSeg button").forEach(b=>b.addEventListener("click",()=>{if(b.disabled)return;action=b.dataset.act;document.querySelectorAll("#actSeg button").forEach(x=>x.setAttribute("aria-pressed",String(x===b)));draw();}));
+let rt;new ResizeObserver(()=>{clearTimeout(rt);rt=setTimeout(draw,80);}).observe(document.querySelector(".stage"));
+
+function actionable(n){return action==="explore" ? true : action==="github" ? !!n.gh : action==="external" ? !!n.ext : false;}
+function openUrl(u){if(u)window.open(u,"_blank","noopener");}
+function handleTap(i){
+  const n=S().nodes[i];
+  if(action==="explore"){current=i;sel.value=i;draw();}
+  else if(action==="github"){openUrl(n.gh);}
+  else if(action==="external"){openUrl(n.ext);}
+}
+function drillInto(childKey){stack.push({key:scopeKey,current});scopeKey=childKey;current=0;mode="both";document.querySelectorAll("#relSeg button").forEach(x=>x.setAttribute("aria-pressed",String(x.dataset.mode==="both")));rebuildSelect();draw();}
+function popTo(idx){const target=stack[idx];stack=stack.slice(0,idx);scopeKey=target.key;current=target.current;rebuildSelect();draw();}
+
+function neighbours(idx){
+  const out=[],inc=[];
+  S().edges.forEach(([f,t,ty])=>{if(f===idx)out.push({other:t,type:ty});if(t===idx)inc.push({other:f,type:ty});});
+  return {out,inc};
+}
+function cardInner(node,opts={}){
+  const center=opts.center, rel=opts.rel, dim=opts.dim;
+  let relHTML="";
+  if(rel){const c=ECSS[rel.type];relHTML=`<div class="relrow"><span class="arrow">${rel.dir==="out"?"depends on →":"← depended on by"}</span><span class="reltag" style="color:${c}">${REL[rel.type]}</span>${opts.go?`<span class="go">${opts.go}</span>`:""}</div>`;}
+  let contents="";
+  if(center && node.child && SCOPES[node.child]){contents=`<button class="contents" data-child="${node.child}">⊕ Contents (${SCOPES[node.child].nodes.length})</button>`;}
+  return `<div class="card${center?" is-center":""}${dim?" inert":""}">
+    <div class="row"><span class="badge">${BADGE[node.type]||"REPO"}</span><span class="name">${node.label}</span><span class="dot" style="color:${RAG[node.rag]||RAG.grey}"></span></div>
+    ${center?`<div class="reason">${node.reason}</div>`:""}${relHTML}${contents}</div>`;
+}
+function goLabel(n){return action==="github"&&n.gh?"open ↗":action==="external"&&n.ext?"open ↗":"";}
+
+function setHint(){
+  const map={explore:"<b>Explore</b> — tap a card to re-centre the diagram on it.",github:"<b>GitHub</b> — tap a repo to open it on GitHub in a new tab. Cards with no repo are dimmed.",external:"<b>External</b> — tap an external system to open its site in a new tab. Others are dimmed."};
+  elHint.innerHTML=map[action]||"";
+}
+function setCrumbs(){
+  elCrumbs.innerHTML="";
+  const trail=[...stack.map((s,i)=>({label:SCOPES[s.key].label,idx:i})),{label:S().label,idx:-1}];
+  trail.forEach((c,k)=>{
+    if(k)elCrumbs.insertAdjacentHTML("beforeend",`<span class="sep">›</span>`);
+    if(c.idx===-1){const s=document.createElement("strong");s.textContent=c.label;s.style.color="var(--text)";elCrumbs.appendChild(s);}
+    else{const a=document.createElement("a");a.textContent=c.label;a.addEventListener("click",()=>popTo(c.idx));elCrumbs.appendChild(a);}
+  });
+}
+
+function draw(){
+  const stage=document.querySelector(".stage");
+  const W=stage.clientWidth,H=stage.clientHeight;
+  const nodes=S().nodes, focus=nodes[current];
+  let {out,inc}=neighbours(current);
+  let lo=mode==="in"?[]:out, li=mode==="out"?[]:inc;
+  elCount.innerHTML=`<b>${out.length}</b> dependencies &nbsp;·&nbsp; <b>${inc.length}</b> dependents`;
+  setHint();setCrumbs();
+  wires.innerHTML="";overlay.innerHTML="";overlay.className="overlay";
+  if(W<760){drawList(focus,lo,li);legend.classList.add("hide");}
+  else{drawRadial(focus,lo,li,W,H);legend.classList.remove("hide");}
+  overlay.querySelectorAll(".contents").forEach(b=>b.addEventListener("click",e=>{e.stopPropagation();drillInto(b.dataset.child);}));
+}
+
+function drawList(focus,out,inc){
+  overlay.classList.add("list");
+  const nodes=S().nodes;
+  const wrap=document.createElement("div");
+  wrap.innerHTML=`<div class="focuswrap">${cardInner(focus,{center:true})}</div>`;
+  const section=(title,items,dir)=>{
+    const s=document.createElement("div");s.innerHTML=`<div class="sect">${title}</div>`;
+    if(!items.length){const e=document.createElement("div");e.className="empty";e.textContent="None";s.appendChild(e);return s;}
+    const br=document.createElement("div");br.className="branch";
+    items.forEach(it=>{const node=nodes[it.other],dim=!actionable(node);
+      const t=document.createElement("div");t.className="twig";t.style.setProperty("--twig",ECSS[it.type]);
+      t.innerHTML=cardInner(node,{rel:{type:it.type,dir},dim,go:goLabel(node)});
+      t.addEventListener("click",()=>handleTap(it.other));
+      br.appendChild(t);});
+    s.appendChild(br);return s;
+  };
+  if(mode!=="in")wrap.appendChild(section("Depends on →",out,"out"));
+  if(mode!=="out")wrap.appendChild(section("← Depended on by",inc,"in"));
+  overlay.appendChild(wrap);
+}
+
+function place(list,side,R,CX,CY){
+  const n=list.length;if(!n)return[];
+  const spread=Math.min(150,40+n*12),start=-spread/2,step=n>1?spread/(n-1):0;
+  return list.map((it,k)=>{const ang=start+step*k,ring=(n>6&&k%2===1)?R*1.32:R,a=side>0?ang*Math.PI/180:Math.PI-ang*Math.PI/180;return{...it,dir:side>0?"out":"in",x:CX+ring*Math.cos(a),y:CY+ring*Math.sin(a)};});
+}
+function marker(type){const m=document.createElementNS(SVGNS,"marker");m.id="arr-"+type;m.setAttribute("viewBox","0 0 10 10");m.setAttribute("refX","9");m.setAttribute("refY","5");m.setAttribute("markerWidth","7");m.setAttribute("markerHeight","7");m.setAttribute("orient","auto-start-reverse");const p=document.createElementNS(SVGNS,"path");p.setAttribute("d","M0,0 L10,5 L0,10 z");p.setAttribute("fill",ECSS[type]);m.appendChild(p);return m;}
+function drawRadial(focus,out,inc,W,H){
+  overlay.classList.add("radial");
+  const nodes=S().nodes,CX=W/2,CY=H/2,cardW=190,cardH=92;
+  const maxSide=Math.max(out.length,inc.length);
+  const maxR=Math.min(W/2-cardW/2-14,H/2-cardH/2-14);
+  let R=Math.min(maxR,130+maxSide*16);R=Math.max(R,110);
+  const pts=[...place(out,1,R,CX,CY),...place(inc,-1,R,CX,CY)];
+  const defs=document.createElementNS(SVGNS,"defs");new Set(pts.map(p=>p.type)).forEach(t=>defs.appendChild(marker(t)));wires.appendChild(defs);
+  pts.forEach(p=>{const ln=document.createElementNS(SVGNS,"line");const from=p.dir==="out"?{x:CX,y:CY}:p,to=p.dir==="out"?p:{x:CX,y:CY};ln.setAttribute("x1",from.x);ln.setAttribute("y1",from.y);ln.setAttribute("x2",to.x);ln.setAttribute("y2",to.y);ln.setAttribute("stroke",ECSS[p.type]);ln.setAttribute("class","spoke");ln.setAttribute("marker-end",`url(#arr-${p.type})`);wires.appendChild(ln);});
+  pts.forEach(p=>{const node=nodes[p.other],dim=!actionable(node);const el=document.createElement("div");el.className="place";el.style.left=p.x+"px";el.style.top=p.y+"px";el.style.width=cardW+"px";el.innerHTML=cardInner(node,{rel:{type:p.type,dir:p.dir},dim,go:goLabel(node)});el.addEventListener("click",()=>handleTap(p.other));overlay.appendChild(el);});
+  const c=document.createElement("div");c.className="place is-center";c.style.left=CX+"px";c.style.top=CY+"px";c.style.width=(cardW+24)+"px";c.innerHTML=cardInner(focus,{center:true});overlay.appendChild(c);
+  legend.innerHTML="";[...new Set(pts.map(p=>p.type))].sort().forEach(t=>{const s=document.createElement("span");s.innerHTML=`<i style="border-color:${ECSS[t]}"></i>${REL[t]}`;legend.appendChild(s);});
+}
+
+// Live data: fetch the published cartridge; fall back to the embedded snapshot.
+const DATA_BASE="../federation_control_ledger/data/";
+const CHILD_KEY="data-federation";
+function reshapeNodes(fc){
+  return (fc.features||[]).map(f=>{const p=f.properties||{};const cm=p.child_manifest||null;
+    return {label:p.label||f.id,type:p.repo_type||p.scope_type||"unknown",rag:p.rag||p.status||"grey",reason:p.status_reason||"",child:(cm&&/data-federation/.test(cm))?CHILD_KEY:null};});
+}
+async function loadJSON(path){const r=await fetch(DATA_BASE+path,{cache:"no-cache"});if(!r.ok)throw new Error(path+" "+r.status);return r.json();}
+async function loadRoot(){
+  try{
+    const [nf,ef]=await Promise.all([loadJSON("nodes.json"),loadJSON("edges.json")]);
+    const nodes=reshapeNodes(nf); if(!nodes.length) throw new Error("empty");
+    applyRootLinks(nodes);
+    SCOPES.root.nodes=nodes;
+    SCOPES.root.edges=(ef.edges||[]).map(e=>[e[0],e[1],e[2]]);
+    return "live";
+  }catch(e){ return "snapshot"; }
+}
+(async()=>{
+  const src=await loadRoot();
+  const tag=document.getElementById("srcTag");
+  if(tag){tag.textContent=src;tag.classList.toggle("live",src==="live");}
+  rebuildSelect();draw();
+})();
+</script>
+</body>
+</html>
