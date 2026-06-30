@@ -1,7 +1,7 @@
 {
   "type": "FeatureCollection",
   "features": [
-    {"type":"Feature","id":"Ventusltd/data-federation-map-for-globalgrid2050-all-repos","geometry":{"type":"Point","coordinates":[-12,10]},"properties":{"label":"data-federation-map-for-globalgrid2050-all-repos","repo_type":"data","scope_type":"data","rag":"green","status":"green","status_reason":"active federation repository","importance_score":0.98,"child_manifest":null}},
+    {"type":"Feature","id":"Ventusltd/data-federation-map-for-globalgrid2050-all-repos","geometry":{"type":"Point","coordinates":[-12,10]},"properties":{"label":"data-federation-map-for-globalgrid2050-all-repos","repo_type":"data","scope_type":"data","rag":"green","status":"green","status_reason":"active federation repository","importance_score":0.98,"child_manifest":"scopes/data-federation/manifest.json"}},
     {"type":"Feature","id":"Ventusltd/data-gb-electricity","geometry":{"type":"Point","coordinates":[-55,22]},"properties":{"label":"data-gb-electricity","repo_type":"data","scope_type":"data","rag":"red","status":"red","status_reason":"contract finding surfaced","importance_score":0.95,"child_manifest":null}},
     {"type":"Feature","id":"Ventusltd/data-interconnectors","geometry":{"type":"Point","coordinates":[-55,-12]},"properties":{"label":"data-interconnectors","repo_type":"data","scope_type":"data","rag":"red","status":"red","status_reason":"contract finding surfaced","importance_score":0.88,"child_manifest":null}},
     {"type":"Feature","id":"Ventusltd/gb-electricity-ui","geometry":{"type":"Point","coordinates":[16,2]},"properties":{"label":"gb-electricity-ui","repo_type":"ui","scope_type":"ui","rag":"red","status":"red","status_reason":"depends on verified data repos","importance_score":0.75,"child_manifest":null}},
