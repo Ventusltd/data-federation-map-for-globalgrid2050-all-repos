@@ -1,28 +1,50 @@
-name: GridBot Federation Map Weekly
+name: GridBot Federation Publish Weekly
 
 on:
   schedule:
     - cron: '31 6 * * 1'
   workflow_dispatch:
+    inputs:
+      mode:
+        description: 'audit builds the plan and writes reports only; apply publishes JSON after human dispatch'
+        type: choice
+        required: true
+        default: audit
+        options:
+          - audit
+          - apply
+      commit_reports:
+        description: 'Commit audit report and ledger evidence when mode=audit'
+        type: choice
+        required: true
+        default: 'false'
+        options:
+          - 'true'
+          - 'false'
 
 permissions:
   contents: write
 
 concurrency:
-  group: gridbot-federation-map-weekly
+  group: gridbot-federation-publish-weekly
   cancel-in-progress: false
 
+env:
+  RUN_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.mode || 'audit' }}
+  COMMIT_REPORTS: ${{ github.event_name == 'workflow_dispatch' && inputs.commit_reports || 'false' }}
+
 jobs:
-  federation-map:
+  federation-publish:
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    environment: ${{ github.event_name == 'workflow_dispatch' && inputs.mode == 'apply' && 'federation-apply' || 'federation-audit' }}
 
     steps:
-      - name: Checkout federation map repo using GitHub Actions token
+      - name: Checkout federation map repo using GridBot PAT
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          token: ${{ github.token }}
+          token: ${{ secrets.GRIDBOT_PAT }}
 
       - name: Check GridBot PAT is available
         env:
@@ -34,6 +56,24 @@ jobs:
             exit 1
           fi
           echo "GRIDBOT_PAT is available to this workflow."
+
+      - name: Enforce mode and apply gate
+        run: |
+          set -euo pipefail
+          echo "RUN_MODE=${RUN_MODE}"
+          echo "COMMIT_REPORTS=${COMMIT_REPORTS}"
+          if [ "${RUN_MODE}" != "audit" ] && [ "${RUN_MODE}" != "apply" ]; then
+            echo "Invalid mode: ${RUN_MODE}"
+            exit 1
+          fi
+          if [ "${RUN_MODE}" = "apply" ] && [ "${GITHUB_EVENT_NAME}" != "workflow_dispatch" ]; then
+            echo "Apply is only allowed from a human workflow_dispatch."
+            exit 1
+          fi
+          if [ "${GITHUB_EVENT_NAME}" != "workflow_dispatch" ] && [ "${RUN_MODE}" != "audit" ]; then
+            echo "Scheduled/default runs must remain audit only."
+            exit 1
+          fi
 
       - name: Sync latest main before processing
         run: git pull --ff-only origin main
@@ -49,36 +89,83 @@ jobs:
           python -m pip install --upgrade pip
           pip install duckdb requests
 
-      - name: Build federation map
+      - name: Run scanner
+        id: scanner
+        continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.GRIDBOT_PAT }}
+          GRIDBOT_PAT: ${{ secrets.GRIDBOT_PAT }}
         run: |
           set -euo pipefail
           python scripts/build_federation_map.py --owner Ventusltd
 
-      - name: Upload federation map report
+      - name: Run federation publish bridge
+        env:
+          GRIDBOT_PAT: ${{ secrets.GRIDBOT_PAT }}
+          GH_TOKEN: ${{ secrets.GRIDBOT_PAT }}
+        run: |
+          set -euo pipefail
+          python scripts/publish_federation_json.py \
+            --mode "${RUN_MODE}" \
+            --repository "${GITHUB_REPOSITORY}" \
+            --scanner-status "${{ steps.scanner.outcome }}"
+
+      - name: Upload federation publish report
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: federation-map-report
+          name: federation-publish-report
+          if-no-files-found: warn
           path: |
-            reports/FEDERATION_MAP_LATEST.md
-            reports/json/FEDERATION_MAP_LATEST.json
+            reports/FEDERATION_PUBLISH_LATEST.md
+            reports/json/FEDERATION_PUBLISH_LATEST.json
+            live_sandbox/federation_control_ledger/PUBLISH_LEDGER.md
 
-      - name: Commit federation map outputs
+      - name: Commit federation publish audit evidence
+        if: ${{ success() && env.RUN_MODE == 'audit' && env.COMMIT_REPORTS == 'true' }}
         env:
-          GH_WRITE_TOKEN: ${{ github.token }}
+          GH_WRITE_TOKEN: ${{ secrets.GRIDBOT_PAT }}
         run: |
           set -euo pipefail
           git config user.name "Gridbot"
           git config user.email "gridbot@users.noreply.github.com"
-          git add data/federation_map reports/FEDERATION_MAP_LATEST.md reports/json/FEDERATION_MAP_LATEST.json
+          git add \
+            scripts/publish_federation_json.py \
+            .github/workflows/gridbot_federation_map_weekly.yml \
+            reports/FEDERATION_PUBLISH_LATEST.md \
+            reports/json/FEDERATION_PUBLISH_LATEST.json \
+            live_sandbox/federation_control_ledger/PUBLISH_LEDGER.md
+          if git diff --cached --name-only | grep -E '^live_sandbox/federation_control_ledger/data/(nodes|edges)\.json$'; then
+            echo "Audit commit attempted to stage target JSON."
+            exit 1
+          fi
           if git diff --cached --quiet; then
-            echo "No federation map changes to commit."
+            echo "No federation publish audit evidence changes to commit."
           else
-            git commit -m "data(federation-map): weekly all-repos scan"
+            git commit -m "data: federation-publish audit"
             git remote set-url origin "https://x-access-token:${GH_WRITE_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
-            git fetch origin main
-            git rebase origin/main
+            git push origin HEAD:${GITHUB_REF_NAME}
+          fi
+
+      - name: Commit federation publish apply output
+        if: ${{ success() && env.RUN_MODE == 'apply' }}
+        env:
+          GH_WRITE_TOKEN: ${{ secrets.GRIDBOT_PAT }}
+        run: |
+          set -euo pipefail
+          git config user.name "Gridbot"
+          git config user.email "gridbot@users.noreply.github.com"
+          git add \
+            live_sandbox/federation_control_ledger/data/nodes.json \
+            live_sandbox/federation_control_ledger/data/edges.json \
+            live_sandbox/federation_control_ledger/PUBLISH_LEDGER.md \
+            reports/FEDERATION_PUBLISH_LATEST.md \
+            reports/json/FEDERATION_PUBLISH_LATEST.json \
+            DEPENDENCIES.md
+          if git diff --cached --quiet; then
+            echo "No federation publish apply changes to commit."
+          else
+            git commit -m "data: federation-publish apply"
+            git remote set-url origin "https://x-access-token:${GH_WRITE_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
             git push origin HEAD:${GITHUB_REF_NAME}
           fi
