@@ -6,6 +6,15 @@ This is not a data output, scanner, workflow, or UI layer. The repository remain
 
 This note belongs here because the federation map is not only a technical index of repositories. It is also the place where the project records why one verified node, one verified edge, one clean partition, and one reproducible scan matter. The same discipline that protects a row key also protects the whole federation. The smallest verified unit is not a rehearsal for the system; it is the system expressed at the smallest scale.
 
+## Binding requirements in this folder
+
+```text
+FEDERATION_LEDGER_SCOPE_EMPLOYERS_REQUIREMENT.md
+AUDIT_AND_COMMIT_EMPLOYERS_REQUIREMENT.md
+```
+
+The first file defines what the permanent federation ledger is allowed to become. The second file defines how audit, apply, reports, workflow changes, and independent verification must operate across the federation.
+
 ## Repository alignment
 
 This entry should be read as governance context for the federation, not as executable logic.
