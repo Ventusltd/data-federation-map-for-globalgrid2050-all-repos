@@ -1,0 +1,20 @@
+[
+  {
+    "group": "Repository internals",
+    "layers": [
+      {"id":"repo-root","label":"Repo root","type":"point","source_url":"nodes.json","node_filter":["==",["get","scope_type"],"repository_internal"],"colour_rule":"rag","size_rule":"importance_score","min_zoom":0,"preload":true,"visible_default":true,"description":"The root repository node for this child scope."},
+      {"id":"ui-files","label":"UI page and files","type":"point","source_url":"nodes.json","node_filter":["in",["get","scope_type"],["literal",["public_page","file"]]],"colour_rule":"rag","size_rule":"importance_score","min_zoom":0,"preload":true,"visible_default":true,"description":"The live dashboard page and the files that render it."},
+      {"id":"cartridge-data","label":"Cartridge data","type":"point","source_url":"nodes.json","node_filter":["in",["get","scope_type"],["literal",["folder","report"]]],"colour_rule":"rag","size_rule":"importance_score","min_zoom":0,"preload":true,"visible_default":true,"description":"Data cartridges, reports and doctrine folders."},
+      {"id":"external-hosting","label":"Hosting and workflows","type":"point","source_url":"nodes.json","node_filter":["in",["get","scope_type"],["literal",["public_hosting","workflow_host"]]],"colour_rule":"rag","size_rule":"importance_score","min_zoom":0,"preload":true,"visible_default":true,"description":"Public hosting and workflow services."}
+    ]
+  },
+  {
+    "group": "Declared links",
+    "layers": [
+      {"id":"edge-repo","label":"Repo structure","type":"line","source_url":"edges.json","edge_filter":["==",["get","edge_type"],"repo"],"colour_rule":"edge_type","size_rule":"weight","min_zoom":0,"preload":true,"visible_default":true,"description":"Declared repository structure links."},
+      {"id":"edge-data","label":"Data cartridge links","type":"line","source_url":"edges.json","edge_filter":["==",["get","edge_type"],"data"],"colour_rule":"edge_type","size_rule":"weight","min_zoom":0,"preload":true,"visible_default":true,"description":"Data file and manifest links."},
+      {"id":"edge-governance","label":"Governance links","type":"line","source_url":"edges.json","edge_filter":["==",["get","edge_type"],"governance"],"colour_rule":"edge_type","size_rule":"weight","min_zoom":0,"preload":true,"visible_default":true,"description":"Report and doctrine links."},
+      {"id":"edge-external","label":"External services","type":"line","source_url":"edges.json","edge_filter":["==",["get","edge_type"],"external"],"colour_rule":"edge_type","size_rule":"weight","min_zoom":0,"preload":true,"visible_default":true,"description":"GitHub Pages and GitHub Actions links."}
+    ]
+  }
+]
