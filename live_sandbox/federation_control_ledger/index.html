@@ -2,84 +2,44 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Ventus Global Grid 2050 | Repository Federation</title>
-  <link href="https://cdn.jsdelivr.net/npm/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
-  <link href="style.css" rel="stylesheet" />
-  <link href="cartridge.css" rel="stylesheet" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Ventus Global Grid 2050 | Repository Relationship Board</title>
+  <link rel="stylesheet" href="style.css?v=relation-board-1" />
+  <script>window.REPO_BOARD_ROOT = 'data/manifest.json';</script>
+  <script src="app.js?v=relation-board-1" defer></script>
 </head>
 <body>
-  <div id="fatal-banner">Critical error: federation atlas failed to load</div>
-
-  <div class="dashboard">
-    <header class="hud-header">
-      <div class="hud-block">
-        <small>SYSTEM TIME</small><br>
-        <span class="hud-val" id="clock">--:--:--</span><br>
-        <span id="date" class="hud-date">--/--/----</span>
+  <main class="app-shell">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Ventus Global Grid 2050</p>
+        <h1>Repository Relationship Board</h1>
       </div>
-      <div class="ventus-brand" aria-label="Ventus Global Grid 2050">
-        <div class="ventus-main">VENTUS</div>
-        <div class="ventus-sub">GLOBAL GRID 2050</div>
-      </div>
-      <div class="hud-block right">
-        <small>2050 TARGET</small><br>
-        <span class="hud-val days" id="days">-- DAYS</span>
+      <div class="actions">
+        <button id="resetButton" type="button">Reset</button>
+        <button id="fullscreenButton" type="button">Fullscreen</button>
       </div>
     </header>
 
-    <section class="map-container" id="map-container" aria-label="Repository federation topology atlas">
-      <div id="map"></div>
-      <div class="custom-map-attrib" id="scope-attrib">Static cartridge · abstract 2D topology plane · no command triggers</div>
-      <div class="breadcrumb" id="breadcrumb"><button id="scope-back" type="button" disabled>Back</button><span id="scope-label">Loading root scope…</span></div>
-      <button id="btn-fullscreen" type="button" title="Fullscreen">⛶</button>
-      <button id="btn-exit-fullscreen" type="button">× Exit</button>
+    <nav class="relation-nav" aria-label="Relationship filters">
+      <button data-filter="all" type="button">All relations</button>
+      <button data-filter="data" type="button">Data</button>
+      <button data-filter="governance" type="button">Governance</button>
+      <button data-filter="archive" type="button">Archive</button>
+      <button data-filter="external" type="button">External</button>
+      <button data-filter="repo" type="button">Repo refs</button>
+    </nav>
 
-      <div class="search-bar-wrapper">
-        <div class="search-box">
-          <input class="search-input" id="search-input" type="text" placeholder="Search current scope..." autocomplete="off" />
-          <div class="search-results" id="search-results"></div>
-        </div>
-        <button class="search-btn" id="search-btn" type="button">GO</button>
-      </div>
-
-      <div class="map-controls">
-        <button class="map-ctrl-btn" id="btn-export" type="button">⬇ Export CSV</button>
-        <button class="map-ctrl-btn" id="btn-neighbourhood" type="button">◎ Neighbourhood</button>
-        <button class="map-ctrl-btn" id="btn-sectors" type="button">⬡ Sectors</button>
-        <button class="map-ctrl-btn" id="btn-status" type="button">◑ Status Colours</button>
-        <button class="map-ctrl-btn" id="btn-reset" type="button">↺ Reset View</button>
-      </div>
-
-      <div class="topology-note" id="topology-note">Ventus Global Grid 2050 · repository federation for an electrified future</div>
+    <section class="summary" aria-live="polite">
+      <div><span class="label">Scope</span><strong id="scopeName">Loading</strong></div>
+      <div><span class="label">Repos / relations</span><strong id="relationCount">—</strong></div>
     </section>
 
-    <section class="scada-wrapper" aria-label="Layer controls">
-      <div class="scada-brand">
-        <div>
-          <div class="scada-brand-main">VENTUS</div>
-          <div class="scada-brand-sub">GLOBAL GRID 2050</div>
-        </div>
-        <div class="scada-brand-tag">Repository federation | open infrastructure intelligence</div>
-      </div>
-      <div class="status-legend">
-        <div class="status-dot"><span class="green"></span>Operational</div>
-        <div class="status-dot"><span class="amber"></span>Warning</div>
-        <div class="status-dot"><span class="red"></span>Flagged</div>
-        <div class="status-dot"><span class="grey"></span>Unknown</div>
-        <div class="status-dot"><span class="blue"></span>External</div>
-      </div>
-      <div class="scada-keys" id="layer-controls"></div>
-      <div class="disclaimer-box">
-        This sandbox renders static atlas cartridges. It is observe-only. Status colours are data-derived and cannot be changed by the interface. Child manifests are navigation only, not truth edits.
-      </div>
+    <section class="board-wrap" aria-label="Repository relationship board">
+      <div id="board" class="board"></div>
     </section>
-  </div>
 
-  <script>
-    window.ATLAS_ROOT_MANIFEST = 'data/manifest.json';
-  </script>
-  <script src="https://cdn.jsdelivr.net/npm/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
-  <script src="app.js"></script>
+    <footer class="note">Relational database design view. One card per repository or source. Lines show declared relationships. Observe-only.</footer>
+  </main>
 </body>
 </html>
