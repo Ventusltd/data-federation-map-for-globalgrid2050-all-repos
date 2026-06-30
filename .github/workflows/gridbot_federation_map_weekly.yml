@@ -18,11 +18,11 @@ jobs:
     timeout-minutes: 60
 
     steps:
-      - name: Checkout federation map repo using GridBot PAT
+      - name: Checkout federation map repo using GitHub Actions token
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          token: ${{ secrets.GRIDBOT_PAT }}
+          token: ${{ github.token }}
 
       - name: Check GridBot PAT is available
         env:
@@ -67,7 +67,7 @@ jobs:
 
       - name: Commit federation map outputs
         env:
-          GRIDBOT_PAT: ${{ secrets.GRIDBOT_PAT }}
+          GH_WRITE_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           git config user.name "Gridbot"
@@ -77,7 +77,7 @@ jobs:
             echo "No federation map changes to commit."
           else
             git commit -m "data(federation-map): weekly all-repos scan"
-            git remote set-url origin "https://x-access-token:${GRIDBOT_PAT}@github.com/${GITHUB_REPOSITORY}.git"
+            git remote set-url origin "https://x-access-token:${GH_WRITE_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
             git fetch origin main
             git rebase origin/main
             git push origin HEAD:${GITHUB_REF_NAME}
