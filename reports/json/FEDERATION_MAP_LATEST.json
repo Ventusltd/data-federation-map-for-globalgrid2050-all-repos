@@ -1,0 +1,31 @@
+{
+  "generatedUTC": "2026-06-30T12:03:47.070721Z",
+  "scanId": "20260630T120258",
+  "methodVersion": "federation_map_dna_v1_duckdb_parquet",
+  "owner": "Ventusltd",
+  "outputs": {
+    "currentNodeRows": 16,
+    "currentEdgeRows": 302,
+    "snapshotNodeRows": 16,
+    "snapshotEdgeRows": 302,
+    "snapshotPath": "/home/runner/work/data-federation-map-for-globalgrid2050-all-repos/data-federation-map-for-globalgrid2050-all-repos/data/federation_map/snapshots/year=2026/month=06/week=27"
+  },
+  "sourceAudit": {
+    "scanId": "20260630T120258",
+    "generatedUTC": "2026-06-30T12:02:58.973213Z",
+    "repoCount": 12,
+    "nodeRowsPrepared": 16,
+    "edgeRowsPrepared": 302,
+    "fetchErrors": []
+  },
+  "verification": {
+    "nodeRows": 16,
+    "nodeDistinctKeys": 16,
+    "edgeRows": 302,
+    "edgeDistinctKeys": 302,
+    "nodeNullKeys": 0,
+    "edgeNullKeys": 0,
+    "duplicateNodeKeys": 0,
+    "duplicateEdgeKeys": 0
+  }
+}
