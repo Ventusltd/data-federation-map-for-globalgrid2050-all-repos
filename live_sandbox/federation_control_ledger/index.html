@@ -2,16 +2,57 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>GlobalGrid2050 Federation Control Ledger</title>
 <link rel="stylesheet" href="style.css">
 <script src="data.js" defer></script>
 <script src="app.js" defer></script>
 </head>
 <body>
-<canvas id="c"></canvas>
-<div id="lab"></div>
-<header><div><h1>GlobalGrid2050 Federation Control Ledger</h1><div class="sub">Live sandbox · observe-only · repository constellation from current federation data</div></div><input id="q" placeholder="Search"><select id="f"><option value="all">all status</option><option>green</option><option>amber</option><option>red</option><option>grey</option><option>blue</option></select><button id="fit">fit</button></header>
-<aside id="p"></aside><footer id="foot"></footer>
+<main class="app-shell">
+<header class="topbar">
+  <div>
+    <p class="eyebrow">GLOBALGRID2050 · FEDERATION CONTROL LEDGER</p>
+    <h1>Repository Map</h1>
+    <p class="sub">Observe-only sandbox. Status is data-derived. No command triggers.</p>
+  </div>
+  <div class="actions">
+    <button id="refitButton" type="button">Refit</button>
+    <button id="fullscreenButton" type="button">Fullscreen</button>
+  </div>
+</header>
+<section class="statusbar" aria-live="polite">
+  <div><span class="label">Nodes</span><strong id="nodeCount">—</strong></div>
+  <div><span class="label">Edges</span><strong id="edgeCount">—</strong></div>
+  <div><span class="label">Key proof</span><strong id="keyProof">—</strong></div>
+</section>
+<nav id="layerNav" class="layer-nav" aria-label="Layer navigation"></nav>
+<section class="controls" aria-label="Filters">
+  <input id="searchInput" type="search" placeholder="Search repository, source, status">
+  <select id="ragFilter" aria-label="Status filter">
+    <option value="all">All status</option>
+    <option value="green">Green</option>
+    <option value="amber">Amber</option>
+    <option value="red">Red</option>
+    <option value="grey">Grey</option>
+    <option value="blue">Blue</option>
+  </select>
+  <select id="typeFilter" aria-label="Type filter">
+    <option value="all">All types</option>
+    <option value="data">Data</option>
+    <option value="ui">UI</option>
+    <option value="homepage">Homepage</option>
+    <option value="source_archive">Source archive</option>
+    <option value="unknown">Unknown</option>
+    <option value="external">External</option>
+  </select>
+</section>
+<section class="finding" id="findingBox"></section>
+<section class="map-wrap" aria-label="Federation dependency map">
+  <div id="map" class="map"></div>
+</section>
+<footer class="footer">Relational node-edge data. Layered 2D rendering. Parquet remains the proof store; this sandbox is only a view.</footer>
+</main>
+<aside id="detailPanel" class="detail-panel" hidden></aside>
 </body>
 </html>
