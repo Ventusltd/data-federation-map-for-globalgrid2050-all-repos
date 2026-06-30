@@ -1,0 +1,10 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {"type":"Feature","id":"sector-data","geometry":{"type":"Point","coordinates":[-38,7]},"properties":{"id":"sector-data","label":"Data repositories","level":0,"node_count":4,"edge_count":21,"min_zoom":0,"summary_status":"red"}},
+    {"type":"Feature","id":"sector-interface","geometry":{"type":"Point","coordinates":[34,5]},"properties":{"id":"sector-interface","label":"Interfaces and homepage","level":0,"node_count":2,"edge_count":8,"min_zoom":0,"summary_status":"amber"}},
+    {"type":"Feature","id":"sector-archive","geometry":{"type":"Point","coordinates":[64,2]},"properties":{"id":"sector-archive","label":"Source archive","level":0,"node_count":1,"edge_count":5,"min_zoom":0,"summary_status":"blue"}},
+    {"type":"Feature","id":"sector-related","geometry":{"type":"Point","coordinates":[-44,-8]},"properties":{"id":"sector-related","label":"Related repositories","level":0,"node_count":6,"edge_count":1,"min_zoom":0,"summary_status":"amber"}},
+    {"type":"Feature","id":"sector-external","geometry":{"type":"Point","coordinates":[96,4]},"properties":{"id":"sector-external","label":"External services","level":0,"node_count":4,"edge_count":17,"min_zoom":0,"summary_status":"blue"}}
+  ]
+}
