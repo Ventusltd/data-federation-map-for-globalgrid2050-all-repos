@@ -4,6 +4,16 @@ Plain-language project change log for `data-federation-map-for-globalgrid2050-al
 
 ---
 
+## 2026-06-30 — Jean Luc Federation Dashboard named
+
+Added `jean-luc/README.md` defining `Jean Luc Federation Dashboard` as the internal federation dashboard.
+
+Updated the root README to name Jean Luc as the dashboard and require it to render only verified Parquet-derived truth.
+
+Superseded the earlier misframed dashboard note so the repo uses the correct Jean Luc frame.
+
+---
+
 ## 2026-06-30 — Local employer requirements anchored
 
 Added the binding audit-and-commit employer requirement in `every-drop-is-the-ocean/AUDIT_AND_COMMIT_EMPLOYERS_REQUIREMENT.md`.
