@@ -24,6 +24,17 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GRIDBOT_PAT }}
 
+      - name: Check GridBot PAT is available
+        env:
+          GRIDBOT_PAT: ${{ secrets.GRIDBOT_PAT }}
+        run: |
+          set -euo pipefail
+          if [ -z "${GRIDBOT_PAT}" ]; then
+            echo "GRIDBOT_PAT is missing or unavailable to this workflow."
+            exit 1
+          fi
+          echo "GRIDBOT_PAT is available to this workflow."
+
       - name: Sync latest main before processing
         run: git pull --ff-only origin main
 
@@ -55,6 +66,8 @@ jobs:
             reports/json/FEDERATION_MAP_LATEST.json
 
       - name: Commit federation map outputs
+        env:
+          GRIDBOT_PAT: ${{ secrets.GRIDBOT_PAT }}
         run: |
           set -euo pipefail
           git config user.name "Gridbot"
@@ -65,5 +78,6 @@ jobs:
           else
             git commit -m "data(federation-map): weekly all-repos scan"
             git pull --ff-only origin main
+            git remote set-url origin "https://x-access-token:${GRIDBOT_PAT}@github.com/${GITHUB_REPOSITORY}.git"
             git push origin HEAD:${GITHUB_REF_NAME}
           fi
