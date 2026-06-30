@@ -3,59 +3,126 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Blank Canvas | GlobalGrid2050</title>
+  <title>Single Target Workspace | GlobalGrid2050</title>
   <style>
-    :root{--bg:#080b10;--panel:#101722;--line:#2b3444;--text:#f6f8ff;--muted:#9aa7ba;--cyan:#00e5ff;--cyan-soft:rgba(0,229,255,.14)}
+    :root{--bg:#070a0f;--panel:#101722;--panel2:#121d2a;--line:#2b3444;--text:#f6f8ff;--muted:#9aa7ba;--cyan:#00e5ff;--cyan2:#67f8ff;--amber:#ffcc66;--red:#ff6666;--soft:rgba(0,229,255,.14)}
     *{box-sizing:border-box} html,body{margin:0;width:100%;min-height:100%;background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;overflow:hidden}
-    main{position:relative;width:100vw;height:100vh;height:100dvh;background:radial-gradient(circle at 50% 45%,rgba(0,229,255,.08),transparent 34%),var(--bg)}
-    .center{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(720px,calc(100vw - 28px));border:1px solid var(--line);border-radius:22px;background:rgba(16,23,34,.88);box-shadow:0 24px 80px rgba(0,0,0,.48),0 0 0 1px rgba(0,229,255,.08);padding:22px}
-    h1{margin:0 0 8px;font-size:clamp(1.35rem,4vw,2.4rem);line-height:1.02}.hint{margin:0 0 18px;color:var(--muted);font-size:.95rem}.row{display:flex;gap:8px}.row input{flex:1;min-width:0;border:1px solid var(--line);border-radius:14px;background:#05080d;color:var(--text);font:inherit;padding:14px 15px;outline:none}.row input:focus{border-color:var(--cyan);box-shadow:0 0 0 3px var(--cyan-soft)}button,a.button{border:1px solid rgba(0,229,255,.42);border-radius:999px;background:var(--cyan-soft);color:var(--text);font-weight:800;text-decoration:none;padding:12px 16px;cursor:pointer;white-space:nowrap}button:hover,a.button:hover{border-color:var(--cyan)}
-    .card{margin-top:16px;border:1px solid rgba(0,229,255,.5);border-radius:16px;background:linear-gradient(135deg,rgba(0,229,255,.14),rgba(16,23,34,.94));padding:14px;display:none}.card.show{display:block}.label{margin:0 0 4px;color:var(--cyan);font-size:.72rem;font-weight:900;letter-spacing:.12em;text-transform:uppercase}.title{margin:0 0 8px;font-size:1.05rem;font-weight:900;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.url{margin:0 0 12px;color:var(--muted);font-size:.82rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.actions{display:flex;flex-wrap:wrap;gap:8px}.topnote{position:absolute;left:16px;top:14px;color:rgba(246,248,255,.42);font-size:.78rem}.clear{background:transparent;color:var(--muted);border-color:var(--line)}
-    @media(max-width:560px){.row{flex-direction:column}button,a.button{width:100%;text-align:center}.center{padding:18px}}
+    main{width:100vw;height:100vh;height:100dvh;display:grid;grid-template-rows:auto auto 1fr;gap:10px;padding:12px;background:radial-gradient(circle at 50% 42%,rgba(0,229,255,.08),transparent 34%),var(--bg)}
+    header{border:1px solid var(--line);border-radius:16px;background:rgba(16,23,34,.86);padding:12px 14px} h1{margin:0;font-size:clamp(1.2rem,3vw,1.9rem);line-height:1.05}.hint{margin:6px 0 0;color:var(--muted);font-size:.9rem}.composer{border:1px solid var(--line);border-radius:16px;background:rgba(16,23,34,.86);padding:12px}.row{display:flex;gap:8px}.row input{flex:1;min-width:0;border:1px solid var(--line);border-radius:14px;background:#05080d;color:var(--text);font:inherit;padding:13px 14px;outline:none}.row input:focus{border-color:var(--cyan);box-shadow:0 0 0 3px var(--soft)}button,a.button{border:1px solid rgba(0,229,255,.42);border-radius:999px;background:var(--soft);color:var(--text);font-weight:850;text-decoration:none;padding:11px 14px;cursor:pointer;white-space:nowrap}button:hover,a.button:hover{border-color:var(--cyan2)}button.ghost{background:transparent;color:var(--muted);border-color:var(--line)}
+    .workspace{min-height:0;overflow:auto;border:1px solid var(--line);border-radius:18px;background:rgba(7,10,15,.78);padding:14px;display:none}.workspace.show{display:block}.target-card{border:1px solid rgba(0,229,255,.55);border-radius:18px;background:linear-gradient(135deg,rgba(0,229,255,.16),rgba(16,23,34,.94));padding:14px;margin-bottom:12px}.label{margin:0 0 5px;color:var(--cyan2);font-size:.72rem;font-weight:950;letter-spacing:.12em;text-transform:uppercase}.title{margin:0 0 7px;font-size:clamp(1.2rem,3vw,1.9rem);font-weight:950}.url{margin:0;color:var(--muted);font-size:.86rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.tabbar{display:flex;gap:8px;overflow-x:auto;padding-bottom:8px}.tabbar button{font-size:.88rem;color:var(--muted);background:rgba(18,29,42,.92);border-color:var(--line)}.tabbar button.active{color:#fff;border-color:var(--cyan);background:rgba(0,229,255,.16)}.panel{border:1px solid var(--line);border-radius:18px;background:rgba(16,23,34,.86);padding:14px;min-height:260px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px}.box{border:1px solid rgba(0,229,255,.24);border-radius:14px;background:rgba(0,229,255,.06);padding:12px}.box h3{margin:0 0 8px;font-size:.88rem;color:var(--cyan2);text-transform:uppercase;letter-spacing:.08em}.box p{margin:0 0 8px;color:var(--muted);line-height:1.35}.box strong{color:#fff}.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}.warn{color:var(--amber)}.empty{color:var(--muted)}.size-pill{display:inline-block;border:1px solid rgba(255,204,102,.45);border-radius:999px;color:var(--amber);padding:3px 8px;font-size:.75rem;font-weight:850}.topline{display:flex;justify-content:space-between;gap:12px;align-items:center}.clearline{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}.small{font-size:.78rem;color:var(--muted)}
+    @media(max-width:700px){main{padding:8px}.row{flex-direction:column}button,a.button{width:100%;text-align:center}.topline{display:block}.clearline button{width:auto}.panel{min-height:220px}}
   </style>
 </head>
 <body>
   <main>
-    <div class="topnote">Blank canvas. Nothing else loaded.</div>
-    <section class="center" aria-label="Blank link canvas">
-      <h1>Start with one link</h1>
-      <p class="hint">Paste the page, repo, file, app or old GlobalGrid2050 tab you want to work on.</p>
+    <header>
+      <h1>Single Target Workspace</h1>
+      <p class="hint">Work on one page, repo or file at a time. Only tabs belonging to the selected target appear.</p>
+    </header>
+
+    <section class="composer">
       <form class="row" id="linkForm">
         <input id="linkInput" type="url" inputmode="url" placeholder="https://globalgrid2050.com/uk_energy_tracking_v6/generation_history/" autocomplete="off" />
-        <button type="submit">Place on canvas</button>
+        <button type="submit">Load target</button>
       </form>
-      <article class="card" id="linkCard">
-        <p class="label">Selected target</p>
-        <p class="title" id="linkTitle"></p>
-        <p class="url" id="linkUrl"></p>
-        <div class="actions">
-          <a class="button" id="openLink" href="#" target="_blank" rel="noopener">Open link</a>
-          <button class="clear" id="clearLink" type="button">Clear</button>
-        </div>
+      <div class="clearline"><button class="ghost" id="sampleGeneration" type="button">Load Generation History example</button><button class="ghost" id="sampleRepd" type="button">Load REPD Grid Atlas example</button><button class="ghost" id="clearLink" type="button">Clear</button></div>
+    </section>
+
+    <section class="workspace" id="workspace" aria-label="Selected target workspace">
+      <article class="target-card">
+        <p class="label">Selected target only</p>
+        <div class="topline"><div><p class="title" id="targetTitle"></p><p class="url" id="targetUrl"></p></div><div class="actions"><a class="button" id="openTarget" href="#" target="_blank" rel="noopener">Open target</a></div></div>
       </article>
+      <nav class="tabbar" id="tabbar" aria-label="Target-specific tabs"></nav>
+      <section class="panel" id="panel"></section>
     </section>
   </main>
+
   <script>
     const form=document.getElementById('linkForm');
     const input=document.getElementById('linkInput');
-    const card=document.getElementById('linkCard');
-    const title=document.getElementById('linkTitle');
-    const urlText=document.getElementById('linkUrl');
-    const openLink=document.getElementById('openLink');
-    const clear=document.getElementById('clearLink');
-    const key='gg2050-blank-canvas-link';
-    function show(value){
-      if(!value){card.classList.remove('show');return;}
-      let label=value;
-      try{const u=new URL(value);label=(u.hostname+u.pathname).replace(/\/$/,'');}catch(e){}
-      title.textContent=label;
-      urlText.textContent=value;
-      openLink.href=value;
-      card.classList.add('show');
+    const workspace=document.getElementById('workspace');
+    const targetTitle=document.getElementById('targetTitle');
+    const targetUrl=document.getElementById('targetUrl');
+    const openTarget=document.getElementById('openTarget');
+    const tabbar=document.getElementById('tabbar');
+    const panel=document.getElementById('panel');
+    const key='gg2050-single-target-workspace';
+
+    const KNOWN=[
+      {
+        id:'generation-history',
+        match:'/uk_energy_tracking_v6/generation_history',
+        title:'UK Energy Tracking V6 · Generation History',
+        kind:'Legacy app page / port target',
+        oldPage:'https://globalgrid2050.com/uk_energy_tracking_v6/generation_history/',
+        sourceRepo:{label:'globalgrid2050 legacy source archive',url:'https://github.com/Ventusltd/globalgrid2050'},
+        newBuild:{label:'gb-electricity-ui new build target',url:'https://github.com/Ventusltd/gb-electricity-ui'},
+        data:[
+          {label:'data-gb-electricity',url:'https://github.com/Ventusltd/data-gb-electricity',size:'not measured yet',note:'expected primary data dependency for GB electricity charts'},
+          {label:'Elexon / historical generation source files',url:'https://bmrs.elexon.co.uk/',size:'not measured yet',note:'upstream source family, exact extracted footprint still needs scanner'}
+        ],
+        checklist:['Find old page source files','Identify current JSON/CSV data files','Measure data dependency size','Map old chart fields to new UI component','Build new equivalent beside old page','Retire old tab only after visual parity']
+      },
+      {
+        id:'repd-grid-atlas-v8',
+        match:'/repd_grid_atlasv8',
+        title:'REPD Grid Atlas v8',
+        kind:'Priority app page / incomplete port',
+        oldPage:'https://globalgrid2050.com/repd_grid_atlasv8/',
+        sourceRepo:{label:'globalgrid2050 legacy source archive',url:'https://github.com/Ventusltd/globalgrid2050'},
+        newBuild:{label:'new UI repo target to confirm',url:'https://github.com/Ventusltd/data-federation-map-for-globalgrid2050-all-repos'},
+        data:[
+          {label:'REPD / GIS source data',url:'https://www.gov.uk/government/publications/renewable-energy-planning-database-monthly-extract',size:'not measured yet',note:'old atlas data dependency to be measured and normalised'},
+          {label:'map / topology assets',url:'https://globalgrid2050.com/repd_grid_atlasv8/',size:'not measured yet',note:'old page assets need inventory'}
+        ],
+        checklist:['Open old atlas','Find source page files','Measure GIS/data asset size','Choose new UI home','Port minimum visual equivalent','Add analytics after parity']
+      }
+    ];
+
+    function escapeHtml(v){return String(v||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+    function detect(url){return KNOWN.find(x=>url.includes(x.match)) || null;}
+    function fallback(url){let title=url;try{const u=new URL(url);title=(u.hostname+u.pathname).replace(/\/$/,'');}catch(e){}return {id:'custom',title,kind:'Custom selected target',oldPage:url,sourceRepo:null,newBuild:null,data:[],checklist:['Identify owning repo','Identify data dependencies','Measure dependency size','Choose new build location','Port only this target']};}
+    function link(label,url){return url?`<a class="button" href="${escapeHtml(url)}" target="_blank" rel="noopener">${escapeHtml(label)}</a>`:'';}
+
+    function tabsFor(target){
+      const tabs=[
+        {id:'target',label:'Target',html:targetPanel(target)},
+        {id:'old',label:'Old page',html:oldPanel(target)},
+        {id:'owner',label:'Belongs to',html:ownerPanel(target)},
+        {id:'data',label:'Data deps',html:dataPanel(target)},
+        {id:'new',label:'New build',html:newPanel(target)},
+        {id:'port',label:'Port checklist',html:portPanel(target)}
+      ];
+      return tabs.filter(t=>t.html);
     }
-    form.addEventListener('submit',e=>{e.preventDefault();const value=input.value.trim();if(!value)return;localStorage.setItem(key,value);show(value);});
-    clear.addEventListener('click',()=>{localStorage.removeItem(key);input.value='';show('');input.focus();});
-    const saved=localStorage.getItem(key)||'';input.value=saved;show(saved);input.focus();
+    function targetPanel(t){return `<div class="grid"><div class="box"><h3>What this is</h3><p><strong>${escapeHtml(t.title)}</strong></p><p>${escapeHtml(t.kind)}</p></div><div class="box"><h3>Rule</h3><p>Only this selected target and its direct dependencies are shown. Nothing else appears unless it belongs to this target.</p></div></div>`;}
+    function oldPanel(t){return `<div class="grid"><div class="box"><h3>Old live page</h3><p>${escapeHtml(t.oldPage)}</p><div class="actions">${link('Open old page',t.oldPage)}</div></div></div>`;}
+    function ownerPanel(t){if(!t.sourceRepo)return `<div class="box"><h3>Owning repo</h3><p class="empty">Not assigned yet. This is the next classification step.</p></div>`;return `<div class="grid"><div class="box"><h3>Owning / source repo</h3><p><strong>${escapeHtml(t.sourceRepo.label)}</strong></p><p>This is where the old target appears to belong until scanner evidence says otherwise.</p><div class="actions">${link('Open repo',t.sourceRepo.url)}</div></div></div>`;}
+    function dataPanel(t){if(!t.data.length)return `<div class="box"><h3>Data dependencies</h3><p class="empty">No dependencies declared yet. Add them only when this target needs them.</p><span class="size-pill">size unknown</span></div>`;return `<div class="grid">${t.data.map(d=>`<div class="box"><h3>${escapeHtml(d.label)}</h3><p>${escapeHtml(d.note)}</p><p><span class="size-pill">${escapeHtml(d.size)}</span></p><div class="actions">${link('Open dependency',d.url)}</div></div>`).join('')}</div>`;}
+    function newPanel(t){if(!t.newBuild)return `<div class="box"><h3>New build</h3><p class="empty">No new build target assigned yet.</p></div>`;return `<div class="grid"><div class="box"><h3>New build location</h3><p><strong>${escapeHtml(t.newBuild.label)}</strong></p><p>Build the replacement beside the old page until it reaches visual and data parity.</p><div class="actions">${link('Open new build target',t.newBuild.url)}</div></div><div class="box"><h3>Porting principle</h3><p>Old page on the left. New build on the right. Only move on when the selected target is understandable and working.</p></div></div>`;}
+    function portPanel(t){return `<div class="grid"><div class="box"><h3>Steps for this target only</h3>${t.checklist.map(x=>`<p>□ ${escapeHtml(x)}</p>`).join('')}</div></div>`;}
+
+    function render(url){
+      if(!url){workspace.classList.remove('show');return;}
+      const target=detect(url)||fallback(url);
+      targetTitle.textContent=target.title;
+      targetUrl.textContent=url;
+      openTarget.href=url;
+      workspace.classList.add('show');
+      const tabs=tabsFor(target);
+      tabbar.innerHTML=tabs.map((t,i)=>`<button type="button" data-tab="${t.id}" class="${i===0?'active':''}">${escapeHtml(t.label)}</button>`).join('');
+      function activate(id){const tab=tabs.find(x=>x.id===id)||tabs[0];panel.innerHTML=tab.html;tabbar.querySelectorAll('button').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab.id));}
+      tabbar.querySelectorAll('button').forEach(b=>b.onclick=()=>activate(b.dataset.tab));
+      activate(tabs[0].id);
+    }
+
+    function load(value){const url=value.trim();if(!url)return;localStorage.setItem(key,url);input.value=url;render(url);}
+    form.addEventListener('submit',e=>{e.preventDefault();load(input.value);});
+    document.getElementById('clearLink').onclick=()=>{localStorage.removeItem(key);input.value='';render('');input.focus();};
+    document.getElementById('sampleGeneration').onclick=()=>load('https://globalgrid2050.com/uk_energy_tracking_v6/generation_history/');
+    document.getElementById('sampleRepd').onclick=()=>load('https://globalgrid2050.com/repd_grid_atlasv8/');
+    const saved=localStorage.getItem(key)||'';input.value=saved;render(saved);input.focus();
   </script>
 </body>
 </html>
