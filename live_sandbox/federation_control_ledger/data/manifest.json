@@ -1,0 +1,30 @@
+{
+  "schema_version": "atlas-cartridge-v0.2",
+  "generated_utc": "2026-06-30T16:30:00Z",
+  "public_title": "Ventus Global Grid 2050",
+  "public_strapline": "Repository federation for an electrified future",
+  "scope": {
+    "id": "globalgrid2050-federation",
+    "label": "Ventus Global Grid 2050 Repository Federation",
+    "scope_type": "repository_federation",
+    "parent_manifest": null
+  },
+  "counts": {
+    "nodes": 16,
+    "edges": 35,
+    "sectors": 5
+  },
+  "key_law_status": "UNPROVEN_ON_DECLARED_KEY",
+  "key_note": "Current scan key passes on scanId|nodeId; declared repo_id contract remains unresolved.",
+  "unresolved_findings": [
+    "repo_id_contract_unresolved",
+    "homepage_governance_edges_present"
+  ],
+  "tier": "geojson",
+  "sources": {
+    "nodes": "nodes.json",
+    "edges": "edges.json",
+    "layers": "layers.json",
+    "sectors": "sectors.json"
+  }
+}
