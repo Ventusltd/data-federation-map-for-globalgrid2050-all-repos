@@ -77,7 +77,8 @@ jobs:
             echo "No federation map changes to commit."
           else
             git commit -m "data(federation-map): weekly all-repos scan"
-            git pull --ff-only origin main
             git remote set-url origin "https://x-access-token:${GRIDBOT_PAT}@github.com/${GITHUB_REPOSITORY}.git"
+            git fetch origin main
+            git rebase origin/main
             git push origin HEAD:${GITHUB_REF_NAME}
           fi
