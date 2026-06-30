@@ -29,13 +29,14 @@
 
     <section class="map-container" id="map-container" aria-label="Repository federation topology atlas">
       <div id="map"></div>
-      <div class="custom-map-attrib">Static federation data · abstract 2D topology plane · no command triggers</div>
+      <div class="custom-map-attrib" id="scope-attrib">Static cartridge · abstract 2D topology plane · no command triggers</div>
+      <div class="breadcrumb" id="breadcrumb"><button id="scope-back" type="button" disabled>Back</button><span id="scope-label">Loading root scope…</span></div>
       <button id="btn-fullscreen" type="button" title="Fullscreen">⛶</button>
       <button id="btn-exit-fullscreen" type="button">× Exit</button>
 
       <div class="search-bar-wrapper">
         <div class="search-box">
-          <input class="search-input" id="search-input" type="text" placeholder="Search repository or source..." autocomplete="off" />
+          <input class="search-input" id="search-input" type="text" placeholder="Search current scope..." autocomplete="off" />
           <div class="search-results" id="search-results"></div>
         </div>
         <button class="search-btn" id="search-btn" type="button">GO</button>
@@ -69,13 +70,15 @@
       </div>
       <div class="scada-keys" id="layer-controls"></div>
       <div class="disclaimer-box">
-        This sandbox renders repository, data and evidence relationships from static federation data. It is observe-only. Status colours are data-derived and cannot be changed by the interface.
+        This sandbox renders static atlas cartridges. It is observe-only. Status colours are data-derived and cannot be changed by the interface. Child manifests are navigation only, not truth edits.
       </div>
     </section>
   </div>
 
+  <script>
+    window.ATLAS_ROOT_MANIFEST = 'data/manifest.json';
+  </script>
   <script src="https://cdn.jsdelivr.net/npm/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
-  <script src="data.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
