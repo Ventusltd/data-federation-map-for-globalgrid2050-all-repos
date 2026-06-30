@@ -1,0 +1,116 @@
+[
+  {
+    "group": "Federation Nodes",
+    "layers": [
+      {
+        "id": "repos_core",
+        "label": "Core Repos",
+        "type": "point",
+        "source_url": "nodes.json",
+        "node_filter": ["in", ["get", "repo_type"], ["literal", ["data", "ui", "homepage", "source_archive"]]],
+        "colour_rule": "rag",
+        "size_rule": "importance_score",
+        "min_zoom": 0,
+        "preload": true,
+        "visible_default": true,
+        "description": "Core repositories in the federation seed."
+      },
+      {
+        "id": "repos_related",
+        "label": "Related Repos",
+        "type": "point",
+        "source_url": "nodes.json",
+        "node_filter": ["==", ["get", "repo_type"], "unknown"],
+        "colour_rule": "rag",
+        "size_rule": "importance_score",
+        "min_zoom": 0,
+        "preload": true,
+        "visible_default": true,
+        "description": "Known repositories that are not yet fully classified in the current federation scope."
+      },
+      {
+        "id": "external_sources",
+        "label": "External Sources",
+        "type": "point",
+        "source_url": "nodes.json",
+        "node_filter": ["==", ["get", "repo_type"], "external"],
+        "colour_rule": "rag",
+        "size_rule": "importance_score",
+        "min_zoom": 0,
+        "preload": true,
+        "visible_default": true,
+        "description": "External services and source systems referenced by the federation."
+      }
+    ]
+  },
+  {
+    "group": "Relationships",
+    "layers": [
+      {
+        "id": "edge_data",
+        "label": "Data Dependencies",
+        "type": "line",
+        "source_url": "edges.json",
+        "edge_filter": ["==", ["get", "edge_type"], "data"],
+        "colour_rule": "edge_type",
+        "size_rule": "weight",
+        "min_zoom": 0,
+        "preload": true,
+        "visible_default": true,
+        "description": "Directed data dependency edges."
+      },
+      {
+        "id": "edge_governance",
+        "label": "Governance Flags",
+        "type": "line",
+        "source_url": "edges.json",
+        "edge_filter": ["==", ["get", "edge_type"], "governance"],
+        "colour_rule": "edge_type",
+        "size_rule": "weight",
+        "min_zoom": 0,
+        "preload": true,
+        "visible_default": true,
+        "description": "Governance links including homepage dependency findings."
+      },
+      {
+        "id": "edge_archive",
+        "label": "Archive Lineage",
+        "type": "line",
+        "source_url": "edges.json",
+        "edge_filter": ["==", ["get", "edge_type"], "archive"],
+        "colour_rule": "edge_type",
+        "size_rule": "weight",
+        "min_zoom": 0,
+        "preload": true,
+        "visible_default": true,
+        "description": "Archive and lineage relationships."
+      },
+      {
+        "id": "edge_external",
+        "label": "External References",
+        "type": "line",
+        "source_url": "edges.json",
+        "edge_filter": ["==", ["get", "edge_type"], "external"],
+        "colour_rule": "edge_type",
+        "size_rule": "weight",
+        "min_zoom": 0,
+        "preload": true,
+        "visible_default": false,
+        "description": "External source and service references."
+      },
+      {
+        "id": "edge_repo",
+        "label": "Repo References",
+        "type": "line",
+        "source_url": "edges.json",
+        "edge_filter": ["==", ["get", "edge_type"], "repo"],
+        "colour_rule": "edge_type",
+        "size_rule": "weight",
+        "min_zoom": 0,
+        "preload": true,
+        "visible_default": true,
+        "description": "Repository reference edges."
+      }
+    ]
+  }
+]
