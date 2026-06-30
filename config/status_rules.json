@@ -1,0 +1,60 @@
+{
+  "schemaVersion": "globalgrid2050.federation_status_rules.v1",
+  "statusOrderWorstFirst": ["red", "amber", "grey", "blue", "green"],
+  "colours": {
+    "green": {
+      "label": "GREEN",
+      "meaning": "current, passing, evidence-complete"
+    },
+    "amber": {
+      "label": "AMBER",
+      "meaning": "current but incomplete, stale soon, or warning-level drift"
+    },
+    "red": {
+      "label": "RED",
+      "meaning": "failed, materially stale, or policy-breaching"
+    },
+    "grey": {
+      "label": "GREY",
+      "meaning": "unknown, not wired, or not yet observed"
+    },
+    "blue": {
+      "label": "BLUE",
+      "meaning": "frozen, manually held, or review state"
+    }
+  },
+  "nodeRules": [
+    {
+      "ruleId": "manifest_missing",
+      "severity": "amber",
+      "description": "Repository does not expose federation.yaml or federation.yml. Not fully federated yet."
+    },
+    {
+      "ruleId": "data_contract_missing_for_data_repo",
+      "severity": "red",
+      "description": "Repository appears to be a data repo but DATA_CONTRACT.md is missing."
+    },
+    {
+      "ruleId": "readme_missing",
+      "severity": "red",
+      "description": "Repository README is missing."
+    },
+    {
+      "ruleId": "workflow_missing",
+      "severity": "amber",
+      "description": "Repository has no GitHub Actions workflow detected."
+    },
+    {
+      "ruleId": "archived_repo",
+      "severity": "blue",
+      "description": "Repository is archived or intentionally frozen."
+    }
+  ],
+  "controlPlaneRules": [
+    {
+      "ruleId": "dispatch_not_allowed_without_target_manifest",
+      "severity": "red",
+      "description": "Do not trigger workflows from the ledger until workflow target, accepted inputs, output expectations and audit logging are declared."
+    }
+  ]
+}
