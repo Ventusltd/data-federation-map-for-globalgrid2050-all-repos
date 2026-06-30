@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>One Card Canvas | GlobalGrid2050</title>
+  <style>
+    :root{--bg:#0b0e13;--panel:#151a22;--line:#303845;--text:#f4f7ff;--muted:#9ca8ba;--cyan:#00e5ff;--gold:#ffcc66;--green:#00ff88;--red:#ff5555;--card-w:min(520px,calc(100vw - 28px))}
+    *{box-sizing:border-box}
+    html,body{margin:0;width:100%;height:100%;background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;overflow:hidden}
+    body{background:radial-gradient(circle at 50% 45%,rgba(0,229,255,.11),transparent 34%),linear-gradient(135deg,#090c12,#111620 58%,#080b10)}
+    main{width:100vw;height:100vh;height:100dvh;display:grid;place-items:center;padding:14px}
+    .card{width:var(--card-w);border:1px solid rgba(0,229,255,.42);border-radius:22px;background:linear-gradient(135deg,rgba(0,229,255,.16),rgba(21,26,34,.96));box-shadow:0 24px 80px rgba(0,0,0,.55),0 0 0 1px rgba(0,229,255,.08);padding:18px}
+    .eyebrow{margin:0 0 7px;color:var(--cyan);font-size:.72rem;font-weight:900;letter-spacing:.14em;text-transform:uppercase}.title{margin:0 0 10px;font-size:clamp(1.35rem,4vw,2.2rem);line-height:1.02}.hint{margin:0 0 16px;color:var(--muted);font-size:.95rem;line-height:1.35}
+    form{display:grid;gap:9px}input{width:100%;border:1px solid var(--line);border-radius:14px;background:#05080d;color:var(--text);font:inherit;padding:14px;outline:none}input:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(0,229,255,.13)}
+    .buttons{display:flex;gap:8px;flex-wrap:wrap}button,a{border:1px solid rgba(0,229,255,.42);border-radius:999px;background:rgba(0,229,255,.13);color:var(--text);font:inherit;font-weight:850;text-decoration:none;padding:11px 14px;cursor:pointer}button:hover,a:hover{border-color:var(--cyan)}.ghost{background:transparent;color:var(--muted);border-color:var(--line)}
+    .target{display:none;margin-top:14px;border:1px solid rgba(255,204,102,.52);border-radius:16px;background:rgba(255,204,102,.08);padding:13px}.target.show{display:block}.target-label{margin:0 0 5px;color:var(--gold);font-size:.72rem;font-weight:950;letter-spacing:.12em;text-transform:uppercase}.target-name{margin:0 0 7px;font-weight:950;font-size:1.05rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.target-url{margin:0;color:var(--muted);font-size:.82rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.target-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:11px}
+    .rule{position:fixed;left:14px;bottom:12px;right:14px;text-align:center;color:rgba(244,247,255,.38);font-size:.75rem;pointer-events:none}
+    @media(max-width:560px){.buttons button,.target-actions a,.target-actions button{width:100%;text-align:center}.card{padding:16px}}
+  </style>
+</head>
+<body>
+  <main>
+    <section class="card" aria-label="One card canvas">
+      <p class="eyebrow">Baby step</p>
+      <h1 class="title">One specified target</h1>
+      <p class="hint">Paste one exact page, repo, file, table or app. It becomes the only card in the middle.</p>
+      <form id="targetForm">
+        <input id="targetInput" type="url" inputmode="url" placeholder="https://globalgrid2050.com/uk_energy_tracking_v6/generation_history/" autocomplete="off" />
+        <div class="buttons">
+          <button type="submit">Put in middle</button>
+          <button class="ghost" type="button" id="clearButton">Clear</button>
+        </div>
+      </form>
+      <article class="target" id="targetCard">
+        <p class="target-label">Centre card</p>
+        <p class="target-name" id="targetName"></p>
+        <p class="target-url" id="targetUrl"></p>
+        <div class="target-actions">
+          <a id="openTarget" href="#" target="_blank" rel="noopener">Open target</a>
+        </div>
+      </article>
+    </section>
+  </main>
+  <div class="rule">No tabs. No matrix. No other repos. One card only.</div>
+  <script>
+    const key='gg2050-football-one-card-target';
+    const form=document.getElementById('targetForm');
+    const input=document.getElementById('targetInput');
+    const card=document.getElementById('targetCard');
+    const nameEl=document.getElementById('targetName');
+    const urlEl=document.getElementById('targetUrl');
+    const openEl=document.getElementById('openTarget');
+    function labelFor(value){try{const u=new URL(value);return (u.hostname+u.pathname).replace(/\/$/,'');}catch(e){return value;}}
+    function render(value){if(!value){card.classList.remove('show');return;}nameEl.textContent=labelFor(value);urlEl.textContent=value;openEl.href=value;card.classList.add('show');}
+    form.addEventListener('submit',e=>{e.preventDefault();const value=input.value.trim();if(!value)return;localStorage.setItem(key,value);render(value);});
+    document.getElementById('clearButton').addEventListener('click',()=>{localStorage.removeItem(key);input.value='';render('');input.focus();});
+    const saved=localStorage.getItem(key)||'';input.value=saved;render(saved);input.focus();
+  </script>
+</body>
+</html>
