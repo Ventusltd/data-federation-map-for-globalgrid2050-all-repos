@@ -1,377 +1,118 @@
-const ROOT_MANIFEST = window.ATLAS_ROOT_MANIFEST || 'data/manifest.json';
+const ROOT = window.REPO_BOARD_ROOT || 'data/manifest.json';
 const FED_REPO = 'https://github.com/Ventusltd/data-federation-map-for-globalgrid2050-all-repos';
-const STATUS_COLOURS = { green:'#00ff88', amber:'#ffcc00', red:'#ff3333', grey:'#888888', blue:'#3388ff' };
-const EDGE_COLOURS = { data:'#66ccff', governance:'#b47cff', archive:'#527ca8', external:'#45536f', repo:'#7f91b3' };
-let map;
-let current = null;
-let scopeStack = [];
-let currentLayerIds = [];
-let currentMarkerObjects = [];
-let selectedNodeId = null;
+const STAGES = [
+  { id:'core', title:'Core', match:n=>n.id.includes('data-federation-map') },
+  { id:'data', title:'Data repos', match:n=>n.repo_type==='data' && !n.id.includes('data-federation-map') },
+  { id:'apps', title:'Apps / UI', match:n=>['ui','homepage'].includes(n.repo_type) },
+  { id:'source', title:'Source / archive', match:n=>n.repo_type==='source_archive' },
+  { id:'external', title:'External systems', match:n=>n.repo_type==='external' },
+  { id:'related', title:'Related repos', match:n=>n.repo_type==='unknown' }
+];
+const TYPE_BADGE = { data:'DB', ui:'UI', homepage:'WEB', source_archive:'SRC', unknown:'REP', external:'EXT' };
+let state = { filter:'all', selected:null, nodes:[], edges:[], manifest:null, cards:new Map(), dims:null };
 
-function escapeHTML(value) {
-  return String(value ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function repoUrl(id){return String(id||'').startsWith('Ventusltd/') ? `https://github.com/${id}` : '';}
+function status(n){return n.status || n.rag || 'grey';}
+function rootUrl(path, base=location.href){return new URL(path, base).href;}
+async function json(path, base){const r=await fetch(rootUrl(path, base),{cache:'no-cache'}); if(!r.ok) throw new Error(`${path} ${r.status}`); return r.json();}
+
+async function load(){
+  const manifestUrl = rootUrl(ROOT);
+  const manifest = await json(manifestUrl);
+  const base = new URL('.', manifestUrl).href;
+  const nodesJson = await json(manifest.sources.nodes, base);
+  const edgesJson = await json(manifest.sources.edges, base);
+  state.manifest = manifest;
+  state.nodes = nodesJson.features.map((f,i)=>({
+    index:i,
+    id:f.properties.id || f.id,
+    label:f.properties.label || f.id,
+    repo_type:f.properties.repo_type || f.properties.scope_type || 'unknown',
+    rag:f.properties.rag || f.properties.status || 'grey',
+    status:f.properties.status || f.properties.rag || 'grey',
+    reason:f.properties.status_reason || '',
+    importance:Number(f.properties.importance_score || 0.4),
+    child_manifest:f.properties.child_manifest || null,
+    source_url:f.properties.source_url || repoUrl(f.properties.id || f.id)
+  }));
+  state.edges = (edgesJson.edges || []).map(([from,to,type],i)=>({ id:`e${i}`, from, to, type, source:state.nodes[from], target:state.nodes[to] })).filter(e=>e.source&&e.target);
+  render();
+  wire();
 }
 
-function resolveUrl(path, base) {
-  return new URL(path, base || window.location.href).href;
-}
-
-async function fetchJSON(path, base) {
-  const url = resolveUrl(path, base);
-  const response = await fetch(url, { cache: 'no-cache' });
-  if (!response.ok) throw new Error(`Failed to load ${url}: ${response.status}`);
-  return response.json();
-}
-
-function initClock() {
-  function tick() {
-    const now = new Date();
-    const pad = n => String(n).padStart(2, '0');
-    document.getElementById('clock').textContent = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
-    document.getElementById('date').textContent = `${pad(now.getDate())}/${pad(now.getMonth() + 1)}/${now.getFullYear()}`;
-    const target = new Date('2050-01-01T00:00:00Z');
-    const days = Math.max(0, Math.ceil((target - now) / 86400000));
-    document.getElementById('days').textContent = `${days} DAYS`;
-  }
-  tick();
-  setInterval(tick, 1000);
-}
-
-function staticStyle() {
-  return { version:8, sources:{}, layers:[{ id:'background', type:'background', paint:{ 'background-color':'#000000' } }] };
-}
-
-function initMap() {
-  map = new maplibregl.Map({
-    container:'map',
-    style:staticStyle(),
-    center:[0,0],
-    zoom:1.55,
-    minZoom:0,
-    maxZoom:9,
-    pitch:0,
-    bearing:0,
-    attributionControl:false,
-    dragRotate:false,
-    touchPitch:false,
-    renderWorldCopies:false
+function grouped(){
+  const used = new Set();
+  const groups = STAGES.map(stage=>{
+    const items = state.nodes.filter(n=>!used.has(n.id)&&stage.match(n));
+    items.forEach(n=>used.add(n.id));
+    return {...stage, items:items.sort((a,b)=>b.importance-a.importance)};
   });
-  map.touchZoomRotate.disableRotation();
-  map.on('load', () => loadScope(ROOT_MANIFEST, false));
-  map.on('error', event => {
-    console.error(event?.error || event);
-    document.getElementById('fatal-banner').style.display = 'block';
+  const leftovers = state.nodes.filter(n=>!used.has(n.id));
+  if(leftovers.length) groups.push({id:'other', title:'Other', items:leftovers});
+  return groups.filter(g=>g.items.length);
+}
+
+function cssVar(name, fallback){const v=parseFloat(getComputedStyle(document.documentElement).getPropertyValue(name)); return Number.isFinite(v)?v:fallback;}
+function geometry(groups){
+  const cardW=cssVar('--card-w',236), cardH=cssVar('--card-h',132), rowGap=cssVar('--row-gap',16), colGap=cssVar('--col-gap',70), pad=cssVar('--board-pad',14), title=cssVar('--title-offset',38);
+  const cards = new Map();
+  groups.forEach((g, col)=>g.items.forEach((n,row)=>cards.set(n.id,{x:pad+col*(cardW+colGap), y:pad+title+row*(cardH+rowGap), w:cardW, h:cardH, col, row})));
+  const maxRows = Math.max(...groups.map(g=>g.items.length),1);
+  return {cards, width:pad*2+groups.length*cardW+(groups.length-1)*colGap, height:pad*2+title+maxRows*cardH+(maxRows-1)*rowGap, cardW, cardH, pad, title};
+}
+
+function render(){
+  const board=document.getElementById('board');
+  const groups=grouped();
+  const dims=geometry(groups);
+  state.cards=dims.cards; state.dims=dims;
+  board.style.width=`${Math.max(dims.width, board.parentElement.clientWidth)}px`;
+  board.style.height=`${Math.max(dims.height, board.parentElement.clientHeight)}px`;
+  board.innerHTML='';
+  board.appendChild(connectors());
+  groups.forEach(g=>{
+    const x=dims.cards.get(g.items[0].id)?.x || dims.pad;
+    const h=document.createElement('h2'); h.className='stage-title'; h.style.left=`${x}px`; h.style.top=`${dims.pad}px`; h.textContent=g.title; board.appendChild(h);
+    g.items.forEach(n=>board.appendChild(card(n)));
   });
+  document.getElementById('scopeName').textContent=state.manifest?.scope?.label || state.manifest?.public_title || 'Repository Federation';
+  document.getElementById('relationCount').textContent=`${state.nodes.length} / ${visibleEdges().length}`;
+  document.querySelectorAll('.relation-nav button').forEach(b=>b.classList.toggle('active',b.dataset.filter===state.filter));
 }
 
-function ensureNodeProperties(nodes) {
-  for (const feature of nodes.features) {
-    feature.properties = feature.properties || {};
-    feature.properties.id = feature.properties.id || feature.id;
-    feature.properties.label = feature.properties.label || feature.properties.id || feature.id;
-    feature.properties.status = feature.properties.status || feature.properties.rag || 'grey';
-    feature.properties.rag = feature.properties.rag || feature.properties.status;
-    feature.properties.importance_score = Number(feature.properties.importance_score ?? 0.4);
-    feature.properties.repo_type = feature.properties.repo_type || feature.properties.scope_type || 'unknown';
-    feature.properties.scope_type = feature.properties.scope_type || feature.properties.repo_type;
-    feature.properties.child_manifest = feature.properties.child_manifest || null;
-    feature.properties.source_url = feature.properties.source_url || repoUrlFromId(feature.properties.id);
-  }
-  return nodes;
-}
+function visibleEdges(){return state.edges.filter(e=>state.filter==='all'||e.type===state.filter);}
+function relatedIds(id){const s=new Set([id]); state.edges.forEach(e=>{if(e.source.id===id||e.target.id===id){s.add(e.source.id);s.add(e.target.id);}}); return s;}
 
-function repoUrlFromId(id) {
-  return String(id || '').startsWith('Ventusltd/') ? `https://github.com/${id}` : '';
-}
-
-function edgeGeoJSON(rawEdges, nodes) {
-  if (rawEdges.type === 'FeatureCollection') return rawEdges;
-  const features = (rawEdges.edges || []).map(([from, to, edgeType], index) => {
-    const a = nodes.features[from];
-    const b = nodes.features[to];
-    const ac = a.geometry.coordinates;
-    const bc = b.geometry.coordinates;
-    const mid = (ac[0] + bc[0]) / 2;
-    return {
-      type:'Feature',
-      id:`edge-${index}`,
-      geometry:{ type:'LineString', coordinates:[ac, [mid, ac[1]], [mid, bc[1]], bc] },
-      properties:{
-        id:`edge-${index}`,
-        source:a.properties.id,
-        target:b.properties.id,
-        source_label:a.properties.label,
-        target_label:b.properties.label,
-        edge_type:edgeType,
-        status:edgeType === 'governance' ? 'amber' : 'green',
-        status_reason:edgeType === 'governance' ? 'governance finding surfaced' : 'resolved relationship',
-        weight:1,
-        min_zoom:0
-      }
-    };
+function connectors(){
+  const svg=document.createElementNS('http://www.w3.org/2000/svg','svg'); svg.classList.add('connector-layer'); svg.setAttribute('width',state.dims.width); svg.setAttribute('height',state.dims.height);
+  const selectedSet=state.selected?relatedIds(state.selected):null;
+  visibleEdges().forEach(e=>{
+    const a=state.cards.get(e.source.id), b=state.cards.get(e.target.id); if(!a||!b) return;
+    const sx=a.x+a.w, sy=a.y+a.h/2, tx=b.x, ty=b.y+b.h/2, mid=sx+(tx-sx)/2;
+    const p=document.createElementNS('http://www.w3.org/2000/svg','path');
+    p.setAttribute('d',`M${sx} ${sy} H${mid} V${ty} H${tx}`);
+    p.setAttribute('class',`connector-path ${e.type}${selectedSet&&!selectedSet.has(e.source.id)&&!selectedSet.has(e.target.id)?' dim':''}${state.selected&&(e.source.id===state.selected||e.target.id===state.selected)?' highlight':''}`);
+    svg.appendChild(p);
   });
-  return { type:'FeatureCollection', features };
+  return svg;
 }
 
-async function loadScope(manifestPath, pushParent) {
-  try {
-    const parentManifestUrl = current?.manifestUrl || window.location.href;
-    const manifestUrl = resolveUrl(manifestPath, parentManifestUrl);
-    const manifest = await fetchJSON(manifestUrl);
-    if (pushParent && current) scopeStack.push(current.manifestUrl);
-    if (manifestUrl !== resolveUrl(ROOT_MANIFEST) && !Array.isArray(manifest.unresolved_findings)) {
-      throw new Error('Child scope refused: manifest does not expose unresolved_findings.');
-    }
-    const base = new URL('.', manifestUrl).href;
-    const sources = manifest.sources || {};
-    const layers = await fetchJSON(sources.layers || 'layers.json', base);
-    const nodes = ensureNodeProperties(await fetchJSON(sources.nodes || 'nodes.json', base));
-    const rawEdges = await fetchJSON(sources.edges || 'edges.json', base);
-    const edges = edgeGeoJSON(rawEdges, nodes);
-    const sectors = sources.sectors ? await fetchJSON(sources.sectors, base) : { type:'FeatureCollection', features:[] };
-    current = { manifestUrl, base, manifest, layers, nodes, edges, sectors };
-    selectedNodeId = null;
-    clearMapData();
-    addSources(nodes, edges, sectors);
-    addConfiguredLayers(layers);
-    addSelectionLayer();
-    addNodeMarkers(nodes);
-    buildLayerControls(layers);
-    buildSearch();
-    updateScopeUI();
-    fitAll(false);
-  } catch (error) {
-    console.error(error);
-    document.getElementById('fatal-banner').textContent = error.message;
-    document.getElementById('fatal-banner').style.display = 'block';
-  }
+function card(n){
+  const g=state.cards.get(n.id), s=status(n), href=n.source_url||repoUrl(n.id), selected=state.selected===n.id, related=state.selected?relatedIds(state.selected).has(n.id):true;
+  const div=document.createElement('article'); div.className=`repo-card status-${s}${selected?' selected':''}${!related?' dim':''}`; div.style.left=`${g.x}px`; div.style.top=`${g.y}px`;
+  div.innerHTML=`<div class="repo-meta"><span>${esc(n.repo_type.replace('_',' '))}</span><span>${esc(s)}</span></div><button class="repo-main" type="button"><span class="repo-badge">${esc(TYPE_BADGE[n.repo_type]||'REP')}</span><span class="repo-name">${esc(n.label)}</span><span class="repo-dot">●</span></button><div class="repo-reason">${esc(n.reason)}</div><div class="repo-tools"><a href="${esc(FED_REPO)}/blob/main/reports/FEDERATION_MAP_LATEST.md" target="_blank" rel="noopener">REPORT</a>${href?`<a href="${esc(href)}" target="_blank" rel="noopener">REPO</a>`:''}${n.child_manifest?'<a href="#" data-child>ATLAS</a>':''}</div>`;
+  div.querySelector('.repo-main').addEventListener('click',()=>{state.selected=state.selected===n.id?null:n.id; render(); scrollCard(n.id);});
+  const child=div.querySelector('[data-child]'); if(child) child.addEventListener('click',e=>{e.preventDefault(); alert('Child atlas hook present; repo-internals scanner not yet attached.');});
+  return div;
 }
 
-function clearMapData() {
-  for (const marker of currentMarkerObjects) marker.remove();
-  currentMarkerObjects = [];
-  for (const id of [...currentLayerIds].reverse()) if (map.getLayer(id)) map.removeLayer(id);
-  currentLayerIds = [];
-  for (const id of ['selected_node','nodes','edges','sectors']) if (map.getSource(id)) map.removeSource(id);
+function scrollCard(id){const g=state.cards.get(id); if(!g)return; document.querySelector('.board-wrap').scrollTo({left:Math.max(0,g.x-40),top:Math.max(0,g.y-60),behavior:'smooth'});}
+function wire(){
+  document.querySelectorAll('.relation-nav button').forEach(b=>b.onclick=()=>{state.filter=b.dataset.filter; render();});
+  document.getElementById('resetButton').onclick=()=>{state.filter='all';state.selected=null;render();document.querySelector('.board-wrap').scrollTo({left:0,top:0,behavior:'smooth'});};
+  document.getElementById('fullscreenButton').onclick=()=>{document.body.classList.toggle('focus-mode');document.getElementById('fullscreenButton').textContent=document.body.classList.contains('focus-mode')?'Exit':'Fullscreen';};
+  window.addEventListener('resize',()=>render());
 }
 
-function addSources(nodes, edges, sectors) {
-  map.addSource('nodes', { type:'geojson', data:nodes, promoteId:'id' });
-  map.addSource('edges', { type:'geojson', data:edges, promoteId:'id' });
-  map.addSource('sectors', { type:'geojson', data:sectors, promoteId:'id' });
-}
-
-function addConfiguredLayers(groups) {
-  const flat = groups.flatMap(group => group.layers.map(layer => ({ ...layer, group: group.group })));
-  flat.filter(l => l.type === 'line').forEach(addLineLayer);
-  flat.filter(l => l.type === 'point').forEach(addPointLayer);
-}
-
-function addLineLayer(layer) {
-  const id = layer.id;
-  map.addLayer({
-    id,
-    type:'line',
-    source:'edges',
-    minzoom:layer.min_zoom ?? layer.minzoom ?? 0,
-    filter:layer.edge_filter || layer.filter || true,
-    layout:{ visibility: layer.visible_default ? 'visible' : 'none', 'line-cap':'round', 'line-join':'round' },
-    paint:{
-      'line-color': EDGE_COLOURS[id.replace('edge_','')] || layer.color || '#7f91b3',
-      'line-width':['interpolate', ['linear'], ['zoom'], 0, 1, 3, 2.2, 7, 4.8],
-      'line-opacity': id === 'edge_external' ? 0.28 : 0.74,
-      'line-dasharray': id === 'edge_governance' ? [1.5, 1.1] : [1, 0]
-    }
-  });
-  currentLayerIds.push(id);
-}
-
-function addPointLayer(layer) {
-  const id = layer.id;
-  map.addLayer({
-    id,
-    type:'circle',
-    source:'nodes',
-    minzoom:layer.min_zoom ?? layer.minzoom ?? 0,
-    filter:layer.node_filter || layer.filter || true,
-    layout:{ visibility: layer.visible_default ? 'visible' : 'none' },
-    paint:{
-      'circle-radius':['interpolate', ['linear'], ['zoom'], 0, ['interpolate', ['linear'], ['get','importance_score'], 0, 5, 1, 12], 4, ['interpolate', ['linear'], ['get','importance_score'], 0, 9, 1, 24], 8, ['interpolate', ['linear'], ['get','importance_score'], 0, 15, 1, 42]],
-      'circle-color':['match', ['get','status'], 'green', STATUS_COLOURS.green, 'amber', STATUS_COLOURS.amber, 'red', STATUS_COLOURS.red, 'grey', STATUS_COLOURS.grey, 'blue', STATUS_COLOURS.blue, '#888888'],
-      'circle-opacity':0.86,
-      'circle-stroke-color':'#000000',
-      'circle-stroke-width':['interpolate', ['linear'], ['zoom'], 0, 1.2, 6, 3]
-    }
-  });
-  currentLayerIds.push(id);
-  map.on('click', id, event => openNodePopup(event.features[0], event.lngLat));
-  map.on('mouseenter', id, () => { map.getCanvas().style.cursor = 'pointer'; });
-  map.on('mouseleave', id, () => { map.getCanvas().style.cursor = ''; });
-}
-
-function addSelectionLayer() {
-  map.addSource('selected_node', { type:'geojson', data:{ type:'FeatureCollection', features:[] } });
-  map.addLayer({
-    id:'selected_node_ring',
-    type:'circle',
-    source:'selected_node',
-    paint:{ 'circle-radius':['interpolate', ['linear'], ['zoom'], 0, 18, 5, 38, 8, 62], 'circle-color':'rgba(0,0,0,0)', 'circle-stroke-color':'#00ffff', 'circle-stroke-width':2.5, 'circle-opacity':0.9 }
-  });
-  currentLayerIds.push('selected_node_ring');
-}
-
-function addNodeMarkers(nodes) {
-  for (const feature of nodes.features) {
-    const div = document.createElement('div');
-    div.textContent = feature.properties.label;
-    div.style.cssText = 'font:10px Courier New,monospace;color:#dce7ff;text-shadow:0 0 4px #000,0 0 8px #000;white-space:nowrap;pointer-events:none;letter-spacing:.2px;';
-    const marker = new maplibregl.Marker({ element: div, anchor:'top', offset:[0,14] }).setLngLat(feature.geometry.coordinates).addTo(map);
-    currentMarkerObjects.push(marker);
-  }
-}
-
-function setSelected(feature) {
-  selectedNodeId = feature?.properties?.id || null;
-  const data = feature ? { type:'FeatureCollection', features:[feature] } : { type:'FeatureCollection', features:[] };
-  map.getSource('selected_node')?.setData(data);
-}
-
-function popupHTML(properties) {
-  const repoUrl = properties.source_url || repoUrlFromId(properties.id);
-  const report = `${FED_REPO}/blob/main/reports/FEDERATION_MAP_LATEST.md`;
-  const child = properties.child_manifest ? `<a class="popup-btn popup-report" href="#" onclick="window.openAtlasChild('${escapeHTML(properties.child_manifest)}');return false;">OPEN ATLAS</a>` : '';
-  const repo = repoUrl ? `<a class="popup-btn popup-repo" href="${escapeHTML(repoUrl)}" target="_blank" rel="noopener">REPO</a>` : '';
-  const contract = repoUrl && properties.repo_type === 'data' ? `<a class="popup-btn popup-report" href="${escapeHTML(repoUrl)}/blob/main/DATA_CONTRACT.md" target="_blank" rel="noopener">CONTRACT</a>` : '';
-  return `<div class="popup-title">${escapeHTML(properties.label)}</div><div class="popup-meta">${escapeHTML(properties.repo_type)} | ${escapeHTML(properties.id)}</div><div class="popup-status"><span style="color:${STATUS_COLOURS[properties.status] || '#888'}">● ${escapeHTML(properties.status)}</span> ${escapeHTML(properties.status_reason)}</div><div class="popup-btns"><a class="popup-btn popup-report" href="${report}" target="_blank" rel="noopener">REPORT</a>${repo}${contract}${child}</div>`;
-}
-
-function openNodePopup(feature, lngLat) {
-  setSelected(feature);
-  new maplibregl.Popup({ closeButton:true, closeOnClick:false, maxWidth:'380px' })
-    .setLngLat(lngLat || feature.geometry.coordinates)
-    .setHTML(popupHTML(feature.properties))
-    .addTo(map);
-}
-
-window.openAtlasChild = function(childManifest) {
-  loadScope(childManifest, true);
-};
-
-function buildLayerControls(groups) {
-  const wrap = document.getElementById('layer-controls');
-  wrap.innerHTML = '';
-  for (const group of groups) {
-    const box = document.createElement('div');
-    box.className = 'key-group';
-    box.innerHTML = `<div class="key-title">${escapeHTML(group.group)}</div>`;
-    for (const layer of group.layers) {
-      const item = document.createElement('label');
-      item.className = 'key-item';
-      item.style.color = layer.type === 'line' ? (EDGE_COLOURS[layer.id.replace('edge_','')] || '#888') : '#00ffff';
-      item.innerHTML = `<input type="checkbox" ${layer.visible_default ? 'checked' : ''} data-layer="${escapeHTML(layer.id)}"><span class="layer-name">${escapeHTML(layer.label)}</span> <span class="layer-state" id="state-${escapeHTML(layer.id)}">[OK]</span>`;
-      box.appendChild(item);
-    }
-    wrap.appendChild(box);
-  }
-  wrap.querySelectorAll('input[data-layer]').forEach(input => {
-    input.addEventListener('change', () => {
-      const id = input.dataset.layer;
-      if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', input.checked ? 'visible' : 'none');
-      const s = document.getElementById(`state-${id}`);
-      if (s) s.textContent = input.checked ? '[OK]' : '[OFF]';
-    });
-  });
-}
-
-function buildSearch() {
-  const input = document.getElementById('search-input');
-  const results = document.getElementById('search-results');
-  input.value = '';
-  const run = () => {
-    const q = input.value.trim().toLowerCase();
-    if (!q) { results.style.display = 'none'; results.innerHTML = ''; return; }
-    const matches = current.nodes.features.filter(f => `${f.properties.label} ${f.properties.repo_type} ${f.properties.status} ${f.properties.status_reason}`.toLowerCase().includes(q)).slice(0, 12);
-    results.innerHTML = matches.length ? matches.map(f => `<div class="search-result-item" data-id="${escapeHTML(f.properties.id)}"><b>${escapeHTML(f.properties.label)}</b><br>${escapeHTML(f.properties.repo_type)} · ${escapeHTML(f.properties.status)}</div>`).join('') : '<div class="search-no-results">No match in current scope</div>';
-    results.style.display = 'block';
-  };
-  input.oninput = run;
-  input.onkeydown = event => { if (event.key === 'Enter') goToFirstSearchResult(); };
-  document.getElementById('search-btn').onclick = goToFirstSearchResult;
-  results.onclick = event => {
-    const item = event.target.closest('[data-id]');
-    if (item) flyToNode(item.dataset.id);
-  };
-}
-
-function goToFirstSearchResult() {
-  const first = document.querySelector('.search-result-item[data-id]');
-  if (first) flyToNode(first.dataset.id);
-}
-
-function flyToNode(id) {
-  const feature = current.nodes.features.find(f => f.properties.id === id);
-  if (!feature) return;
-  document.getElementById('search-results').style.display = 'none';
-  map.flyTo({ center:feature.geometry.coordinates, zoom:Math.max(map.getZoom(), 4.2), speed:0.9, curve:1.2 });
-  setTimeout(() => openNodePopup(feature, feature.geometry.coordinates), 450);
-}
-
-function updateScopeUI() {
-  const label = current.manifest.scope?.label || current.manifest.public_title || 'Current scope';
-  document.getElementById('scope-label').textContent = label;
-  document.getElementById('scope-attrib').textContent = `${current.manifest.schema_version || 'atlas cartridge'} · ${current.manifest.key_law_status || 'key law unknown'} · no command triggers`;
-  document.getElementById('topology-note').textContent = `${current.manifest.public_title || 'Ventus Global Grid 2050'} · ${current.manifest.public_strapline || 'repository federation for an electrified future'}`;
-  document.getElementById('scope-back').disabled = scopeStack.length === 0;
-}
-
-function wireButtons() {
-  document.getElementById('btn-reset').addEventListener('click', () => fitAll(true));
-  document.getElementById('btn-export').addEventListener('click', exportCSV);
-  document.getElementById('btn-status').addEventListener('click', () => alert(`${current.manifest.key_law_status}\n${current.manifest.key_note || ''}\nFindings: ${(current.manifest.unresolved_findings || []).join(', ')}`));
-  document.getElementById('btn-neighbourhood').addEventListener('click', () => alert(selectedNodeId ? 'Neighbourhood view is reserved for the repo-internals recursion proof.' : 'Select a node first.'));
-  document.getElementById('btn-sectors').addEventListener('click', () => alert('Sectors loaded: ' + (current.sectors.features?.length || 0)));
-  document.getElementById('btn-fullscreen').addEventListener('click', enterFullscreen);
-  document.getElementById('btn-exit-fullscreen').addEventListener('click', exitFullscreen);
-  document.getElementById('scope-back').addEventListener('click', () => {
-    const parent = scopeStack.pop();
-    if (parent) loadScope(parent, false);
-  });
-  document.addEventListener('fullscreenchange', () => document.body.classList.toggle('fs-active', Boolean(document.fullscreenElement)));
-}
-
-function fitAll(animated = true) {
-  if (!current?.nodes?.features?.length) return;
-  const bounds = new maplibregl.LngLatBounds();
-  current.nodes.features.forEach(f => bounds.extend(f.geometry.coordinates));
-  map.fitBounds(bounds, { padding:52, duration:animated ? 700 : 0, maxZoom:2.15 });
-}
-
-function enterFullscreen() {
-  const el = document.documentElement;
-  if (el.requestFullscreen) el.requestFullscreen().catch(() => document.body.classList.add('fs-active'));
-  else document.body.classList.add('fs-active');
-}
-
-function exitFullscreen() {
-  if (document.fullscreenElement) document.exitFullscreen().catch(() => document.body.classList.remove('fs-active'));
-  else document.body.classList.remove('fs-active');
-}
-
-function exportCSV() {
-  const rows = [['id','label','repo_type','status','status_reason','importance_score','child_manifest'], ...current.nodes.features.map(f => [f.properties.id, f.properties.label, f.properties.repo_type, f.properties.status, f.properties.status_reason, f.properties.importance_score, f.properties.child_manifest || ''])];
-  const csv = rows.map(r => r.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
-  const blob = new Blob([csv], { type:'text/csv' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `${current.manifest.scope?.id || 'atlas-scope'}-nodes.csv`;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
-}
-
-initClock();
-initMap();
-wireButtons();
+load().catch(err=>{document.getElementById('board').innerHTML=`<p style="padding:16px;color:#ff6666">${esc(err.message)}</p>`;});
