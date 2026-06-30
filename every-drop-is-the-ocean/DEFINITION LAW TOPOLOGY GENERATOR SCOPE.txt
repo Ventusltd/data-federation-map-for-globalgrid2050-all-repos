@@ -1,0 +1,220 @@
+CONTRACT ADDENDUM — DEFINITION-LAW TOPOLOGY GENERATOR (RECURSIVE, ANY SCOPE)
+Version: 2026-06-30
+Owner / approver: Vikram Kumar, Ventus Ltd
+Executor: ChatGPT
+Independent auditor: Claude
+Status: build-critical addendum to GLOBALGRID2050_2D_ATLAS_STUDY_CONTRACT and the
+ATLAS_CARTRIDGE build help. Extends, does not replace. Public frontend rules unchanged
+(humble, no internal codename, no 3D primary, no command triggers, no grand framing).
+
+======================================================================
+0. ONE-LINE SCOPE
+======================================================================
+
+Build the dashboard as ONE scope-blind topology engine plus a GROWING LIBRARY of
+small scanners, joined by ONE fixed cartridge contract, so the same atlas can render
+any system whose authority has declared its law — repositories, an SLD, a metro map,
+a document, a load-flow model, a PCB — and can recurse into any node like Russian dolls.
+
+The engine is universal. The truth is per-scope and authored by each domain's authority.
+You are not building an omniscient generator. You are building one blind renderer and a
+patient library of translators, each faithful to a declared definition law.
+
+======================================================================
+1. THE THREE PARTS — NEVER CONFLATE THEM
+======================================================================
+
+Every scope, at every recursion level, has exactly three separated parties. This
+mirrors the project's own human model (authority defines, executor builds, auditor verifies).
+
+A. THE DEFINITION LAW (authored by the domain authority, not by us)
+   The party with the right to define the system declares what a node is, what an edge
+   is, and what makes a node's status true or false. Examples:
+     - Repositories: defined by Linux / GitHub / package manifests / import graphs /
+       the developer / an AI — or all of the above.
+     - SLD: defined by the engineer (busbars, breakers, transformers, connections, IEC symbols).
+     - Metro/tube map: defined by the network authority (e.g. TfL) — lines, stations,
+       interchanges, order.
+     - Document: defined by its structure + author (headings, claims, citations, tables, links).
+     - Load-flow model: defined by the power engineer (buses, branches, transformers, constraints).
+     - PCB: defined by the designer (components, nets, design rules).
+   The definition law already exists in the source in most cases (a netlist, a dependency
+   file, a GeoJSON, a line definition, a manifest). The scanner READS it. It does not invent it.
+
+B. THE SCANNER (one per scope-TYPE; transcribes the law into the contract)
+   A small translator that takes one kind of input and emits the fixed cartridge shape.
+   It TRANSCRIBES the authority's definition; it NEVER embellishes. If the definition is
+   silent or incomplete, the scanner emits grey/unknown (a legal state) — it does not fill
+   the gap with a plausible guess. Each scanner declares ITS OWN key and proves ITS OWN
+   data law (distinct key = total rows, zero null keys, endpoints resolve) and surfaces
+   ITS OWN findings. A scanner that cannot state what makes its nodes true is not allowed
+   to ship — it would render a confident lie.
+
+C. THE ENGINE (one, universal, scope-blind)
+   atlas-engine.js + atlas-style.css. Knows nothing about repos, grids, documents, PCBs.
+   It loads a manifest, then renders whatever nodes/edges/layers/sectors the cartridge
+   declares, with the same status colours, importance sizing, zoom gates, evidence cards
+   and connector grammar. It is written ONCE and never changed per domain.
+
+The universality lives in the CONTRACT between A, B and C — not in any clever component.
+
+======================================================================
+2. THE SCANNABILITY TEST (when can something become an atlas?)
+======================================================================
+
+A system is scannable IF AND ONLY IF its authority can answer three questions:
+   1. What is a NODE?
+   2. What is an EDGE (relationship)?
+   3. What makes a node's STATUS true or false (the definition law / validity rule)?
+
+If those three are answered, a scanner can be written and the engine will draw it.
+If they cannot be answered, it is not a topology yet — it is a pile — and NO generator
+may illustrate a pattern that is not there. In that case the correct move is to ask the
+authority to declare the law, NEVER to have the AI invent one.
+
+======================================================================
+3. THE FIXED CARTRIDGE CONTRACT (already live — do not redesign)
+======================================================================
+
+Every scope emits the same files into its own data/ directory. The engine loads
+manifest.json FIRST. These field names already exist in the committed sandbox export:
+
+manifest.json:
+   schema_version, generated_utc, public_title, public_strapline, counts,
+   key_law_status, unresolved_findings, tier, sources
+
+nodes.json (GeoJSON FeatureCollection; one Point per node; abstract coords in lon/lat slots):
+   id, label, node_type, repo_type (→ generalise to scope_type), federation_level
+   (→ generalise to containment_level), rag, status_reason, importance_score,
+   source_url, evidence, min_zoom, x_hint, y_hint
+   ADD ONE FIELD: child_manifest  (null for a leaf; else a path to this node's own
+   manifest.json — this single nullable pointer IS the entire recursion mechanism)
+
+edges.json (GeoJSON FeatureCollection; one LineString per deduped edge):
+   id, source, target, edge_type, weight, status, status_reason, min_zoom, geometry
+
+layers.json (the declarative cartridge array; one engine, many filtered views):
+   id, label, group, type, source_url, node_filter, edge_filter, colour_rule,
+   size_rule, min_zoom, preload, visible_default, description
+
+sectors.json (cluster super-nodes for low-zoom / infinite modularity):
+   id, label, level, node_count, edge_count, min_zoom, summary_status
+
+======================================================================
+4. RECURSION — THE RUSSIAN DOLL, DONE HONESTLY
+======================================================================
+
+Mechanism (engine side, nearly free):
+   - Each node carries child_manifest: null OR a path to its own manifest.json.
+   - Clicking a node with a child_manifest SWAPS THE ROOT SCOPE and loads that scope's
+     five cartridges. It does NOT change truth. Back/breadcrumb returns to the parent scope.
+   - A node with child_manifest = null is a leaf and only opens its evidence card.
+
+Honesty rule (non-negotiable — this is what stops recursion becoming confident fiction):
+   - EVERY recursive level carries its OWN manifest with its OWN key_law_status and its
+     OWN unresolved_findings. A child atlas that cannot surface its own findings MUST NOT
+     OPEN. Recursion carries the honesty down, not just the rendering.
+   - Truth is re-earned per scope. The engine recurses for free; the truth does not.
+     "Every drop is the ocean" is only true if EACH drop is individually verified. A
+     document atlas is the ocean only if it is as verified as the federation atlas.
+
+Examples of valid child scopes (each is its own scanner, built later, one at a time):
+   - Click a repo  → repo-internals atlas (node=file/folder, edge=import/reference,
+     status=cited vs orphaned).
+   - Click a folder → folder atlas.
+   - Click a document → document atlas (node=heading/claim, edge=citation, status=evidence
+     link resolves).
+   - Click a data product → source files, transformations, validation checks, Parquet
+     partitions, reports.
+   - Click a load-flow model → buses, branches, transformers, constraints, results.
+
+======================================================================
+5. TRUTH VS VIEW — STILL APPLIES AT EVERY LEVEL
+======================================================================
+
+Truth (generated from source / Parquet / DuckDB / audit reports / the authority's
+definition; user CANNOT change at any level):
+   node id, edge id, scope type, status, status reason, key law, endpoint resolution,
+   evidence path, dependency facts.
+
+View (navigation only; user CAN change at any level):
+   zoom, pan, selected layers, pinned nodes, collapsed clusters, user order, active scope.
+
+A user may navigate, filter, pin, collapse and open child scopes. A user may NEVER turn
+red into green, delete a finding, edit evidence, or change a dependency fact from the UI,
+at any recursion level.
+
+======================================================================
+6. THE SYSTEMS-GENERATOR PRINCIPLE
+======================================================================
+
+   input scope  →  scanner reads the authority's definition law  →  emits nodes, edges,
+   layers, sectors, evidence  →  the same atlas cartridge renders it.
+
+The scanner transcribes; it never embellishes. Where the law is silent, the map shows
+grey/unknown, never a guess. The map inherits the authority's truth — it is exactly as
+true as the engineer's SLD, TfL's line definition, or the repo's dependency file, and it
+should be, because those parties are the authorities on those systems.
+
+======================================================================
+7. BUILD ORDER (do NOT build all scanners at once)
+======================================================================
+
+1. FINISH THE ENGINE to the cartridge contract on the FEDERATION scope only:
+   load manifest first, render from layers.json cartridges, add the child_manifest
+   pointer (null everywhere for now), Atlas-v8 header, vendor MapLibre + glyphs locally
+   (fix the current CDN static-purity regression). Prove it in a browser, desktop + iPhone.
+   THIS IS THE WHOLE "ANYWHERE" CAPABILITY DONE ONCE.
+
+2. PROVE RECURSION with the CHEAPEST second scanner — repo-internals — because it is
+   structurally closest to the federation scanner you already have
+   (node = file/folder, edge = import/reference, status = cited vs orphaned, key declared,
+   law proven, findings surfaced). When clicking a repo opens its internal map with two
+   real verified levels, recursion is PROVEN: if it recurses once correctly it recurses
+   N times correctly — the mechanism is identical.
+
+3. AFTER THAT, every new domain (document, load-flow, PCB, metro, SLD) is just another
+   scanner written to the three scannability questions, added to the library, each
+   declaring its own key and proving its own law. THE ENGINE IS NEVER TOUCHED AGAIN.
+
+======================================================================
+8. ACCEPTANCE TESTS (auditor verifies from a clean clone)
+======================================================================
+
+Engine / recursion:
+   - engine loads manifest.json first at every scope.
+   - a node with child_manifest opens the child scope; a leaf (null) opens only its card.
+   - breadcrumb/back returns to parent scope without changing truth.
+   - adding a new layer object or a new scope cartridge needs NO engine code change.
+
+Honesty (the critical ones):
+   - EVERY scope's manifest exposes key_law_status and unresolved_findings.
+   - a child atlas that cannot surface its own findings does NOT open.
+   - status colours reproduce when the auditor re-runs the documented query over that
+     scope's source.
+   - the scanner adds NO node or edge absent from the authority's definition; gaps render
+     grey/unknown, never guessed.
+
+Safety / public:
+   - no internal codename anywhere in the public bundle; no 3D primary; no command triggers;
+     no truth-authoring from the UI at any level.
+
+======================================================================
+9. EXPLICITLY OUT OF SCOPE FOR THIS WAVE
+======================================================================
+
+   - Building all scanners now (build engine + recursion proof first).
+   - Document/load-flow/PCB/metro scanners (future waves, one at a time, each proven).
+   - Key reconciliation (scanId|nodeId vs repo_id) and homepage severing (separate waves;
+     keep both findings SURFACED meanwhile).
+   - Production deploy, workflow triggering, 3D, P2P.
+
+======================================================================
+10. THE RULE, IN ONE SENTENCE
+======================================================================
+
+Once a system's authority has declared its definition law, drawing it is just a layer,
+like the atlas — so build one blind engine that renders any conforming cartridge and
+follows a child pointer, and grow a library of scanners that each transcribe one
+authority's law without embellishment, prove their own key, and carry their own findings
+down every level of the recursion.
