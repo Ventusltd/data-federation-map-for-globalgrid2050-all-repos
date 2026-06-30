@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://globalgrid2050.com/schemas/federation_manifest.schema.json",
+  "title": "GlobalGrid2050 Federation Manifest",
+  "type": "object",
+  "required": ["schemaVersion", "repo", "role", "owner", "purpose", "status"],
+  "additionalProperties": true,
+  "properties": {
+    "schemaVersion": {
+      "const": "globalgrid2050.federation_manifest.v1"
+    },
+    "repo": {
+      "type": "string",
+      "pattern": "^Ventusltd/[A-Za-z0-9_.-]+$"
+    },
+    "role": {
+      "type": "string",
+      "enum": ["homepage", "data", "ui", "app", "source_archive", "docs", "research", "unknown"]
+    },
+    "owner": {
+      "type": "string"
+    },
+    "purpose": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["active", "staging", "retiring", "archived", "frozen", "unknown"]
+    },
+    "dataProducts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "format", "grain", "key"],
+        "properties": {
+          "name": {"type": "string"},
+          "format": {"type": "string"},
+          "grain": {"type": "string"},
+          "key": {"type": "string"},
+          "path": {"type": "string"}
+        }
+      }
+    },
+    "dependencies": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["repo", "type", "purpose"],
+        "properties": {
+          "repo": {"type": "string"},
+          "type": {"type": "string"},
+          "purpose": {"type": "string"},
+          "cardinality": {"type": "string"}
+        }
+      }
+    },
+    "workflows": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["file", "purpose"],
+        "properties": {
+          "file": {"type": "string"},
+          "purpose": {"type": "string"},
+          "schedule": {"type": "string"},
+          "dispatchable": {"type": "boolean"}
+        }
+      }
+    }
+  }
+}
