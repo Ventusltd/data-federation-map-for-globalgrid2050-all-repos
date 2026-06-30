@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Blank Canvas | GlobalGrid2050</title>
+  <style>
+    :root{--bg:#080b10;--panel:#101722;--line:#2b3444;--text:#f6f8ff;--muted:#9aa7ba;--cyan:#00e5ff;--cyan-soft:rgba(0,229,255,.14)}
+    *{box-sizing:border-box} html,body{margin:0;width:100%;min-height:100%;background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;overflow:hidden}
+    main{position:relative;width:100vw;height:100vh;height:100dvh;background:radial-gradient(circle at 50% 45%,rgba(0,229,255,.08),transparent 34%),var(--bg)}
+    .center{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(720px,calc(100vw - 28px));border:1px solid var(--line);border-radius:22px;background:rgba(16,23,34,.88);box-shadow:0 24px 80px rgba(0,0,0,.48),0 0 0 1px rgba(0,229,255,.08);padding:22px}
+    h1{margin:0 0 8px;font-size:clamp(1.35rem,4vw,2.4rem);line-height:1.02}.hint{margin:0 0 18px;color:var(--muted);font-size:.95rem}.row{display:flex;gap:8px}.row input{flex:1;min-width:0;border:1px solid var(--line);border-radius:14px;background:#05080d;color:var(--text);font:inherit;padding:14px 15px;outline:none}.row input:focus{border-color:var(--cyan);box-shadow:0 0 0 3px var(--cyan-soft)}button,a.button{border:1px solid rgba(0,229,255,.42);border-radius:999px;background:var(--cyan-soft);color:var(--text);font-weight:800;text-decoration:none;padding:12px 16px;cursor:pointer;white-space:nowrap}button:hover,a.button:hover{border-color:var(--cyan)}
+    .card{margin-top:16px;border:1px solid rgba(0,229,255,.5);border-radius:16px;background:linear-gradient(135deg,rgba(0,229,255,.14),rgba(16,23,34,.94));padding:14px;display:none}.card.show{display:block}.label{margin:0 0 4px;color:var(--cyan);font-size:.72rem;font-weight:900;letter-spacing:.12em;text-transform:uppercase}.title{margin:0 0 8px;font-size:1.05rem;font-weight:900;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.url{margin:0 0 12px;color:var(--muted);font-size:.82rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.actions{display:flex;flex-wrap:wrap;gap:8px}.topnote{position:absolute;left:16px;top:14px;color:rgba(246,248,255,.42);font-size:.78rem}.clear{background:transparent;color:var(--muted);border-color:var(--line)}
+    @media(max-width:560px){.row{flex-direction:column}button,a.button{width:100%;text-align:center}.center{padding:18px}}
+  </style>
+</head>
+<body>
+  <main>
+    <div class="topnote">Blank canvas. Nothing else loaded.</div>
+    <section class="center" aria-label="Blank link canvas">
+      <h1>Start with one link</h1>
+      <p class="hint">Paste the page, repo, file, app or old GlobalGrid2050 tab you want to work on.</p>
+      <form class="row" id="linkForm">
+        <input id="linkInput" type="url" inputmode="url" placeholder="https://globalgrid2050.com/uk_energy_tracking_v6/generation_history/" autocomplete="off" />
+        <button type="submit">Place on canvas</button>
+      </form>
+      <article class="card" id="linkCard">
+        <p class="label">Selected target</p>
+        <p class="title" id="linkTitle"></p>
+        <p class="url" id="linkUrl"></p>
+        <div class="actions">
+          <a class="button" id="openLink" href="#" target="_blank" rel="noopener">Open link</a>
+          <button class="clear" id="clearLink" type="button">Clear</button>
+        </div>
+      </article>
+    </section>
+  </main>
+  <script>
+    const form=document.getElementById('linkForm');
+    const input=document.getElementById('linkInput');
+    const card=document.getElementById('linkCard');
+    const title=document.getElementById('linkTitle');
+    const urlText=document.getElementById('linkUrl');
+    const openLink=document.getElementById('openLink');
+    const clear=document.getElementById('clearLink');
+    const key='gg2050-blank-canvas-link';
+    function show(value){
+      if(!value){card.classList.remove('show');return;}
+      let label=value;
+      try{const u=new URL(value);label=(u.hostname+u.pathname).replace(/\/$/,'');}catch(e){}
+      title.textContent=label;
+      urlText.textContent=value;
+      openLink.href=value;
+      card.classList.add('show');
+    }
+    form.addEventListener('submit',e=>{e.preventDefault();const value=input.value.trim();if(!value)return;localStorage.setItem(key,value);show(value);});
+    clear.addEventListener('click',()=>{localStorage.removeItem(key);input.value='';show('');input.focus();});
+    const saved=localStorage.getItem(key)||'';input.value=saved;show(saved);input.focus();
+  </script>
+</body>
+</html>
