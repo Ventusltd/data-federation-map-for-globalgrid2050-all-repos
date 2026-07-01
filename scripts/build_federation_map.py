@@ -19,7 +19,7 @@ ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "data/federation_map"
 REPORTS = ROOT / "reports"
 JSON_REPORTS = REPORTS / "json"
-METHOD_VERSION = "federation_map_dna_v1_duckdb_parquet"
+METHOD_VERSION = "federation_map_dna_v2_endpoint_integrity"
 
 CANONICAL_FILES = [
     "README.md",
@@ -340,10 +340,27 @@ def verify_outputs() -> dict[str, Any]:
     edge_rows, edge_keys = con.execute(f"SELECT count(*), count(DISTINCT scanId || '|' || edgeId) FROM read_parquet('{edges}')").fetchone()
     node_nulls = con.execute(f"SELECT count(*) FROM read_parquet('{nodes}') WHERE scanId IS NULL OR nodeId IS NULL OR scanId = '' OR nodeId = ''").fetchone()[0]
     edge_nulls = con.execute(f"SELECT count(*) FROM read_parquet('{edges}') WHERE scanId IS NULL OR edgeId IS NULL OR scanId = '' OR edgeId = ''").fetchone()[0]
+    dangling_edges = con.execute(f"""
+        SELECT count(*)
+        FROM read_parquet('{edges}') e
+        LEFT JOIN read_parquet('{nodes}') f ON e.fromNode = f.nodeId
+        LEFT JOIN read_parquet('{nodes}') t ON e.toNode = t.nodeId
+        WHERE f.nodeId IS NULL OR t.nodeId IS NULL
+    """).fetchone()[0]
     duplicate_nodes = int(node_rows - node_keys)
     duplicate_edges = int(edge_rows - edge_keys)
-    if node_nulls or edge_nulls or duplicate_nodes or duplicate_edges:
-        raise RuntimeError(f"verification failed: node_nulls={node_nulls} edge_nulls={edge_nulls} duplicate_nodes={duplicate_nodes} duplicate_edges={duplicate_edges}")
+    failure_reasons = {
+        "node_nulls": int(node_nulls),
+        "edge_nulls": int(edge_nulls),
+        "duplicate_nodes": duplicate_nodes,
+        "duplicate_edges": duplicate_edges,
+        "dangling_edge_endpoints": int(dangling_edges),
+    }
+    verification_passed = not any(failure_reasons.values())
+    failure_reason = (
+        "verification failed: "
+        + " ".join(f"{key}={value}" for key, value in failure_reasons.items())
+    )
     return {
         "nodeRows": int(node_rows),
         "nodeDistinctKeys": int(node_keys),
@@ -353,6 +370,9 @@ def verify_outputs() -> dict[str, Any]:
         "edgeNullKeys": int(edge_nulls),
         "duplicateNodeKeys": duplicate_nodes,
         "duplicateEdgeKeys": duplicate_edges,
+        "danglingEdgeEndpoints": int(dangling_edges),
+        "verificationPassed": verification_passed,
+        "failureReason": "" if verification_passed else failure_reason,
     }
 
 
@@ -366,6 +386,7 @@ def write_reports(report: dict[str, Any]) -> None:
         f"Generated UTC: `{report['generatedUTC']}`",
         f"Scan ID: `{report['scanId']}`",
         f"Method: `{METHOD_VERSION}`",
+        f"Data law result: `{report['dataLawResult']}`",
         "",
         "## Counts",
         "",
@@ -376,6 +397,7 @@ def write_reports(report: dict[str, Any]) -> None:
         f"- Duplicate edge keys: `{report['verification']['duplicateEdgeKeys']}`",
         f"- Node null keys: `{report['verification']['nodeNullKeys']}`",
         f"- Edge null keys: `{report['verification']['edgeNullKeys']}`",
+        f"- Dangling edge endpoints: `{report['verification']['danglingEdgeEndpoints']}`",
         "",
         "## Scaling law",
         "",
@@ -404,9 +426,12 @@ def main() -> int:
         "outputs": outputs,
         "sourceAudit": source_audit,
         "verification": verification,
+        "dataLawResult": "PASS" if verification["verificationPassed"] else "FAIL",
     }
     write_reports(report)
     print(json.dumps(report, indent=2))
+    if not verification["verificationPassed"]:
+        raise RuntimeError(verification["failureReason"])
     return 0
 
 
