@@ -1,0 +1,198 @@
+{
+  "schemaVersion": "1.0",
+  "generatedUTC": "2026-07-01T01:19:24Z",
+  "methodVersion": "federation_publish_json_v1_duckdb_projection",
+  "mode": "apply",
+  "repository": "Ventusltd/data-federation-map-for-globalgrid2050-all-repos",
+  "commitSHA": "e16be6341d2591b1d3d76cfe1776c166f2e7e04d",
+  "target": {
+    "directory": "live_sandbox/federation_control_ledger/data",
+    "nodesJson": "live_sandbox/federation_control_ledger/data/nodes.json",
+    "edgesJson": "live_sandbox/federation_control_ledger/data/edges.json"
+  },
+  "source": {
+    "nodesParquet": "data/federation_map/current/nodes.parquet",
+    "edgesParquet": "data/federation_map/current/edges.parquet",
+    "scannerReport": "reports/json/FEDERATION_MAP_LATEST.json"
+  },
+  "sprawlCheck": {
+    "requirement": "11.3",
+    "result": "PASS",
+    "choice": "extend_existing_weekly_scanner_workflow",
+    "justification": "The existing weekly scanner workflow already runs scripts/build_federation_map.py, so the clean bridge is to extend that workflow rather than add a second scanner workflow.",
+    "workflowPath": ".github/workflows/gridbot_federation_map_weekly.yml"
+  },
+  "sourceAuditNumbers": {
+    "sourceNodeRows": 16,
+    "sourceDistinctNodeIds": 16,
+    "sourceNullNodeIds": 0,
+    "sourceEdgeRows": 302,
+    "sourceDistinctSourceEdgeIds": 302,
+    "sourceNullSourceEdgeIds": 0,
+    "currentSeedNodeCount": 16,
+    "currentSeedNodeIdsMatched": 16,
+    "propertyKeys": [
+      "label",
+      "repo_type",
+      "scope_type",
+      "rag",
+      "status",
+      "status_reason",
+      "importance_score",
+      "child_manifest"
+    ],
+    "rawResolvableProjectedEdgeRows": 302,
+    "projectedEdgeRows": 35,
+    "projectedDistinctDeclaredEdgeKeys": 35,
+    "duplicateProjectedEdgeRowsCollapsed": 267,
+    "unresolvedEdgeRows": 0,
+    "nullEndpointEdgeRows": 0,
+    "projectedNodeRows": 16
+  },
+  "scanner": {
+    "workflowScannerOutcome": "success",
+    "reportPresent": true,
+    "readbackVerificationPassed": true,
+    "verification": {
+      "nodeRows": 16,
+      "nodeDistinctKeys": 16,
+      "edgeRows": 302,
+      "edgeDistinctKeys": 302,
+      "nodeNullKeys": 0,
+      "edgeNullKeys": 0,
+      "duplicateNodeKeys": 0,
+      "duplicateEdgeKeys": 0
+    },
+    "sourceAudit": {
+      "scanId": "20260701T011845",
+      "generatedUTC": "2026-07-01T01:18:45.824426Z",
+      "repoCount": 12,
+      "nodeRowsPrepared": 16,
+      "edgeRowsPrepared": 302,
+      "fetchErrors": []
+    }
+  },
+  "declaredChecks": [
+    {
+      "name": "mode_is_valid",
+      "passed": true,
+      "detail": "mode=apply"
+    },
+    {
+      "name": "apply_runs_only_from_human_workflow_dispatch",
+      "passed": true,
+      "detail": "mode=apply; github_event_name=workflow_dispatch"
+    },
+    {
+      "name": "source_parquet_files_exist",
+      "passed": true,
+      "detail": "nodes_parquet_exists=True; edges_parquet_exists=True"
+    },
+    {
+      "name": "current_ui_json_shape_files_exist",
+      "passed": true,
+      "detail": "nodes_json_exists=True; edges_json_exists=True"
+    },
+    {
+      "name": "scanner_readback_verification_passed",
+      "passed": true,
+      "detail": "scanner_outcome=success; report_present=True"
+    },
+    {
+      "name": "current_nodes_json_is_feature_collection",
+      "passed": true,
+      "detail": "nodes.json type must be FeatureCollection"
+    },
+    {
+      "name": "current_edges_json_has_edges_array",
+      "passed": true,
+      "detail": "edges.json must contain an edges array"
+    },
+    {
+      "name": "node_count_equals_distinct_node_id_count",
+      "passed": true,
+      "detail": "sourceNodeRows=16; sourceDistinctNodeIds=16",
+      "numbers": {
+        "sourceNodeRows": 16,
+        "sourceDistinctNodeIds": 16
+      }
+    },
+    {
+      "name": "zero_null_node_ids",
+      "passed": true,
+      "detail": "sourceNullNodeIds=0",
+      "numbers": {
+        "sourceNullNodeIds": 0
+      }
+    },
+    {
+      "name": "every_edge_from_index_and_to_index_resolves_to_real_node",
+      "passed": true,
+      "detail": "unresolvedEdgeRows=0; edgeIndexFailures=0",
+      "numbers": {
+        "unresolvedEdgeRows": 0,
+        "nodeCount": 16,
+        "edgeCount": 35,
+        "failures": []
+      }
+    },
+    {
+      "name": "edge_count_equals_distinct_declared_edge_key_count",
+      "passed": true,
+      "detail": "projectedEdgeRows=35; projectedDistinctDeclaredEdgeKeys=35",
+      "numbers": {
+        "projectedEdgeRows": 35,
+        "projectedDistinctDeclaredEdgeKeys": 35
+      }
+    },
+    {
+      "name": "published_json_reconciles_exactly_against_parquet_projection",
+      "passed": true,
+      "detail": "expectedHash=489e4b859ed73e45560110272207d21ca2d05a14324a2d2b4304b0ea678e723e; actualHash=489e4b859ed73e45560110272207d21ca2d05a14324a2d2b4304b0ea678e723e",
+      "numbers": {
+        "expectedHash": "489e4b859ed73e45560110272207d21ca2d05a14324a2d2b4304b0ea678e723e",
+        "actualHash": "489e4b859ed73e45560110272207d21ca2d05a14324a2d2b4304b0ea678e723e"
+      }
+    }
+  ],
+  "plannedChangedFiles": [
+    "live_sandbox/federation_control_ledger/data/nodes.json",
+    "live_sandbox/federation_control_ledger/data/edges.json",
+    "reports/FEDERATION_PUBLISH_LATEST.md",
+    "reports/json/FEDERATION_PUBLISH_LATEST.json",
+    "live_sandbox/federation_control_ledger/PUBLISH_LEDGER.md",
+    "DEPENDENCIES.md"
+  ],
+  "actuallyChangedFilesUnderApply": [
+    "live_sandbox/federation_control_ledger/data/nodes.json",
+    "live_sandbox/federation_control_ledger/data/edges.json",
+    "DEPENDENCIES.md"
+  ],
+  "dataLawResult": "PASS",
+  "rollbackMethod": "Revert the apply commit. The publish target is limited to live_sandbox/federation_control_ledger/data/nodes.json, live_sandbox/federation_control_ledger/data/edges.json, DEPENDENCIES.md, and the paired report/ledger evidence files.",
+  "nextAction": "Apply completed. Commit the target JSON, DEPENDENCIES.md, paired report, and append-only ledger evidence together; rollback is revert of that apply commit.",
+  "fatalErrors": [],
+  "warnings": [],
+  "edgeProjectionAudit": {
+    "edgeTypeContract": {
+      "data_dependency": "data",
+      "governance_dependency": "governance",
+      "source_archive_reference": "archive",
+      "repo_reference": "repo",
+      "external_reference": "external"
+    },
+    "unresolvedEdgeSample": []
+  },
+  "projection": {
+    "contract": "nodes ordered by existing UI node order when present, then source Parquet order; edges projected as distinct [fromIndex,toIndex,type] using the source edgeType contract.",
+    "edgeTypeContract": {
+      "data_dependency": "data",
+      "governance_dependency": "governance",
+      "source_archive_reference": "archive",
+      "repo_reference": "repo",
+      "external_reference": "external"
+    },
+    "expectedHash": "489e4b859ed73e45560110272207d21ca2d05a14324a2d2b4304b0ea678e723e",
+    "actualHash": "489e4b859ed73e45560110272207d21ca2d05a14324a2d2b4304b0ea678e723e"
+  }
+}

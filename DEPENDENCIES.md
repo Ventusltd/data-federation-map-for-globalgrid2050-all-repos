@@ -39,3 +39,19 @@ no GitHub App, webhook, gossip, CRDT, or P2P machinery at current scope
 ```
 
 Temporary consumers may read the permanent ledger. The permanent ledger must not depend on temporary consumers.
+
+<!-- federation-publish-json:start -->
+
+## Federation publish bridge
+
+```text
+scripts/publish_federation_json.py
+source: data/federation_map/current/nodes.parquet
+source: data/federation_map/current/edges.parquet
+target: live_sandbox/federation_control_ledger/data/nodes.json
+target: live_sandbox/federation_control_ledger/data/edges.json
+runtime: Python 3.11 standard library plus DuckDB
+additional dependencies introduced: none
+```
+
+<!-- federation-publish-json:end -->
