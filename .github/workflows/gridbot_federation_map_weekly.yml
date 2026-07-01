@@ -137,6 +137,7 @@ jobs:
             scripts/build_federation_map.py \
             scripts/publish_federation_json.py \
             .github/workflows/gridbot_federation_map_weekly.yml \
+            every-drop-is-the-ocean/AUDITOR_VERIFICATION_CONTRACT.md \
             reports/FEDERATION_MAP_LATEST.md \
             reports/json/FEDERATION_MAP_LATEST.json \
             reports/FEDERATION_PUBLISH_LATEST.md \
@@ -149,7 +150,7 @@ jobs:
           if git diff --cached --quiet; then
             echo "No federation publish audit evidence changes to commit."
           else
-            git commit -m "fix: scanner endpoint integrity audit"
+            git commit -m "data: provenance-discriminator audit"
             git push origin HEAD:${GITHUB_REF_NAME}
           fi
 
@@ -176,6 +177,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "No federation publish apply changes to commit."
           else
-            git commit -m "fix: scanner endpoint integrity apply"
+            git commit -m "data: provenance-discriminator apply"
             git push origin HEAD:${GITHUB_REF_NAME}
           fi

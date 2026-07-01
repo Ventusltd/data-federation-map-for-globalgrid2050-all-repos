@@ -123,14 +123,93 @@ Passing result:
 0
 ```
 
-### 4.3 Reserved checks to be filled as POs land
+### 4.3 `provenance_field_present_and_valid` — PO 2a
+
+Purpose: every base federation edge row has an additive provenance discriminator, and the base edge Parquet contains declared rows only.
+
+Key tested:
+
+```text
+edges: scanId + fromNode + toNode + edgeType + evidencePath
+provenance enum: declared | derived
+base-layer rule: zero derived rows in base edge Parquet
+```
+
+Column present method:
+
+```sql
+SELECT count(*) FROM (
+  DESCRIBE SELECT * FROM read_parquet('data/federation_map/current/edges.parquet')
+) WHERE column_name = 'provenance';
+```
+
+Passing result:
+
+```text
+1
+```
+
+Null or blank provenance method:
+
+```sql
+SELECT count(*) FROM read_parquet('data/federation_map/current/edges.parquet')
+WHERE provenance IS NULL OR trim(CAST(provenance AS VARCHAR)) = '';
+```
+
+Passing result:
+
+```text
+0
+```
+
+Invalid enum method:
+
+```sql
+SELECT count(*) FROM read_parquet('data/federation_map/current/edges.parquet')
+WHERE provenance NOT IN ('declared', 'derived');
+```
+
+Passing result:
+
+```text
+0
+```
+
+Derived rows in base method:
+
+```sql
+SELECT count(*) FROM read_parquet('data/federation_map/current/edges.parquet')
+WHERE provenance = 'derived';
+```
+
+Passing result:
+
+```text
+0
+```
+
+All base rows declared method:
+
+```sql
+SELECT count(*) FROM read_parquet('data/federation_map/current/edges.parquet')
+WHERE provenance = 'declared';
+```
+
+Passing result:
+
+```text
+same as total edge row count
+```
+
+The auditor also runs `edge_endpoints_resolve` as the PO 0 regression guard. Its passing result remains `0`.
+
+### 4.4 Reserved checks to be filled as POs land
 
 ```text
 node_key_unique
 no_null_keys
 child_edge_endpoints_resolve
 child_manifest_resolves
-provenance_field_present_and_valid
 base_has_no_derived_edges
 derived_overlay_separate
 every_derived_edge_has_provenance_and_evidence
@@ -141,7 +220,6 @@ Expected future scope:
 ```text
 node_key_unique and no_null_keys: root and child cartridges
 child_edge_endpoints_resolve and child_manifest_resolves: PO 1
-provenance_field_present_and_valid: PO 2a
 base_has_no_derived_edges and derived_overlay_separate: PO 2b and PO 3
 every_derived_edge_has_provenance_and_evidence: PO 6 and PO 3
 ```

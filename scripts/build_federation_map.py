@@ -19,7 +19,7 @@ ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "data/federation_map"
 REPORTS = ROOT / "reports"
 JSON_REPORTS = REPORTS / "json"
-METHOD_VERSION = "federation_map_dna_v2_endpoint_integrity"
+METHOD_VERSION = "federation_map_dna_v3_provenance_discriminator"
 
 CANONICAL_FILES = [
     "README.md",
@@ -41,6 +41,8 @@ EXTERNAL_PATTERNS = [
     ("DuckDB", re.compile(r"duckdb|read_parquet|COPY \(", re.I)),
     ("Parquet", re.compile(r"parquet|zstd", re.I)),
 ]
+PROVENANCE_DECLARED = "declared"
+PROVENANCE_ALLOWED = ("declared", "derived")
 
 
 def canonical_repo_ref(ref: str) -> str:
@@ -231,6 +233,7 @@ def build_rows(owner: str, token: str | None, timeout: int, delay: float, max_fi
                     "cardinality": cardinality,
                     "evidencePath": path,
                     "evidenceText": clean_excerpt(text, target),
+                    "provenance": PROVENANCE_DECLARED,
                     "generatedUTC": generated,
                     "methodVersion": METHOD_VERSION,
                 }
@@ -247,6 +250,7 @@ def build_rows(owner: str, token: str | None, timeout: int, delay: float, max_fi
                         "cardinality": "many-to-one",
                         "evidencePath": path,
                         "evidenceText": external,
+                        "provenance": PROVENANCE_DECLARED,
                         "generatedUTC": generated,
                         "methodVersion": METHOD_VERSION,
                     }
@@ -347,6 +351,18 @@ def verify_outputs() -> dict[str, Any]:
         LEFT JOIN read_parquet('{nodes}') t ON e.toNode = t.nodeId
         WHERE f.nodeId IS NULL OR t.nodeId IS NULL
     """).fetchone()[0]
+    edge_columns = {str(row[0]) for row in con.execute(f"DESCRIBE SELECT * FROM read_parquet('{edges}')").fetchall()}
+    edge_provenance_column_present = int("provenance" in edge_columns)
+    if edge_provenance_column_present:
+        edge_provenance_null_rows = con.execute(f"SELECT count(*) FROM read_parquet('{edges}') WHERE provenance IS NULL OR trim(CAST(provenance AS VARCHAR)) = ''").fetchone()[0]
+        edge_provenance_invalid_rows = con.execute(f"SELECT count(*) FROM read_parquet('{edges}') WHERE provenance NOT IN {PROVENANCE_ALLOWED}").fetchone()[0]
+        derived_rows_in_base_edges = con.execute(f"SELECT count(*) FROM read_parquet('{edges}') WHERE provenance = 'derived'").fetchone()[0]
+        declared_rows_in_base_edges = con.execute(f"SELECT count(*) FROM read_parquet('{edges}') WHERE provenance = 'declared'").fetchone()[0]
+    else:
+        edge_provenance_null_rows = int(edge_rows)
+        edge_provenance_invalid_rows = int(edge_rows)
+        derived_rows_in_base_edges = 0
+        declared_rows_in_base_edges = 0
     duplicate_nodes = int(node_rows - node_keys)
     duplicate_edges = int(edge_rows - edge_keys)
     failure_reasons = {
@@ -355,6 +371,10 @@ def verify_outputs() -> dict[str, Any]:
         "duplicate_nodes": duplicate_nodes,
         "duplicate_edges": duplicate_edges,
         "dangling_edge_endpoints": int(dangling_edges),
+        "edge_provenance_column_missing": int(not edge_provenance_column_present),
+        "edge_provenance_null_rows": int(edge_provenance_null_rows),
+        "edge_provenance_invalid_rows": int(edge_provenance_invalid_rows),
+        "derived_rows_in_base_edges": int(derived_rows_in_base_edges),
     }
     verification_passed = not any(failure_reasons.values())
     failure_reason = (
@@ -371,6 +391,11 @@ def verify_outputs() -> dict[str, Any]:
         "duplicateNodeKeys": duplicate_nodes,
         "duplicateEdgeKeys": duplicate_edges,
         "danglingEdgeEndpoints": int(dangling_edges),
+        "edgeProvenanceColumnPresent": edge_provenance_column_present,
+        "edgeProvenanceNullRows": int(edge_provenance_null_rows),
+        "edgeProvenanceInvalidRows": int(edge_provenance_invalid_rows),
+        "derivedRowsInBaseEdges": int(derived_rows_in_base_edges),
+        "declaredRowsInBaseEdges": int(declared_rows_in_base_edges),
         "verificationPassed": verification_passed,
         "failureReason": "" if verification_passed else failure_reason,
     }
@@ -398,6 +423,11 @@ def write_reports(report: dict[str, Any]) -> None:
         f"- Node null keys: `{report['verification']['nodeNullKeys']}`",
         f"- Edge null keys: `{report['verification']['edgeNullKeys']}`",
         f"- Dangling edge endpoints: `{report['verification']['danglingEdgeEndpoints']}`",
+        f"- Edge provenance column present: `{report['verification']['edgeProvenanceColumnPresent']}`",
+        f"- Edge provenance null rows: `{report['verification']['edgeProvenanceNullRows']}`",
+        f"- Edge provenance invalid rows: `{report['verification']['edgeProvenanceInvalidRows']}`",
+        f"- Derived rows in base edges: `{report['verification']['derivedRowsInBaseEdges']}`",
+        f"- Declared rows in base edges: `{report['verification']['declaredRowsInBaseEdges']}`",
         "",
         "## Scaling law",
         "",
