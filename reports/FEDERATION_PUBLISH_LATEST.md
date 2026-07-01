@@ -1,11 +1,11 @@
 # Federation Publish Latest
 
 Schema version: `1.0`
-Generated UTC: `2026-07-01T01:19:24Z`
+Generated UTC: `2026-07-01T12:30:44Z`
 Method version: `federation_publish_json_v1_duckdb_projection`
 Mode: `apply`
 Repository: `Ventusltd/data-federation-map-for-globalgrid2050-all-repos`
-Commit SHA: `e16be6341d2591b1d3d76cfe1776c166f2e7e04d`
+Commit SHA: `caf6b42d1fef24b2b1d57e003025067932df60ab`
 
 ## Target
 
@@ -25,16 +25,16 @@ Justification: The existing weekly scanner workflow already runs scripts/build_f
 |---|---:|
 | `currentSeedNodeCount` | `16` |
 | `currentSeedNodeIdsMatched` | `16` |
-| `duplicateProjectedEdgeRowsCollapsed` | `267` |
+| `duplicateProjectedEdgeRowsCollapsed` | `268` |
 | `nullEndpointEdgeRows` | `0` |
 | `projectedDistinctDeclaredEdgeKeys` | `35` |
 | `projectedEdgeRows` | `35` |
 | `projectedNodeRows` | `16` |
 | `propertyKeys` | `['label', 'repo_type', 'scope_type', 'rag', 'status', 'status_reason', 'importance_score', 'child_manifest']` |
-| `rawResolvableProjectedEdgeRows` | `302` |
+| `rawResolvableProjectedEdgeRows` | `303` |
 | `sourceDistinctNodeIds` | `16` |
-| `sourceDistinctSourceEdgeIds` | `302` |
-| `sourceEdgeRows` | `302` |
+| `sourceDistinctSourceEdgeIds` | `303` |
+| `sourceEdgeRows` | `303` |
 | `sourceNodeRows` | `16` |
 | `sourceNullNodeIds` | `0` |
 | `sourceNullSourceEdgeIds` | `0` |
@@ -74,9 +74,7 @@ Scanner report present: `True`
 
 ## Actually changed files under apply
 
-- `live_sandbox/federation_control_ledger/data/nodes.json`
-- `live_sandbox/federation_control_ledger/data/edges.json`
-- `DEPENDENCIES.md`
+- None
 
 ## Data-law result
 
