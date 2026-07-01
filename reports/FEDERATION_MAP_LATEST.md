@@ -1,8 +1,8 @@
 # Federation Map Latest
 
-Generated UTC: `2026-07-01T12:30:44.131053Z`
-Scan ID: `20260701T122957`
-Method: `federation_map_dna_v2_endpoint_integrity`
+Generated UTC: `2026-07-01T17:58:35.834255Z`
+Scan ID: `20260701T175753`
+Method: `federation_map_dna_v3_provenance_discriminator`
 Data law result: `PASS`
 
 ## Counts
@@ -15,6 +15,11 @@ Data law result: `PASS`
 - Node null keys: `0`
 - Edge null keys: `0`
 - Dangling edge endpoints: `0`
+- Edge provenance column present: `1`
+- Edge provenance null rows: `0`
+- Edge provenance invalid rows: `0`
+- Derived rows in base edges: `0`
+- Declared rows in base edges: `303`
 
 ## Scaling law
 

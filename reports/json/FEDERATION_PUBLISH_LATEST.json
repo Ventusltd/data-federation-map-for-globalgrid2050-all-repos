@@ -1,10 +1,10 @@
 {
   "schemaVersion": "1.0",
-  "generatedUTC": "2026-07-01T12:30:44Z",
+  "generatedUTC": "2026-07-01T17:58:35Z",
   "methodVersion": "federation_publish_json_v1_duckdb_projection",
-  "mode": "apply",
+  "mode": "audit",
   "repository": "Ventusltd/data-federation-map-for-globalgrid2050-all-repos",
-  "commitSHA": "caf6b42d1fef24b2b1d57e003025067932df60ab",
+  "commitSHA": "2c3c8b53dfd2dedc64ed095a18ce0feb0d8c87f3",
   "target": {
     "directory": "live_sandbox/federation_control_ledger/data",
     "nodesJson": "live_sandbox/federation_control_ledger/data/nodes.json",
@@ -63,12 +63,17 @@
       "duplicateNodeKeys": 0,
       "duplicateEdgeKeys": 0,
       "danglingEdgeEndpoints": 0,
+      "edgeProvenanceColumnPresent": 1,
+      "edgeProvenanceNullRows": 0,
+      "edgeProvenanceInvalidRows": 0,
+      "derivedRowsInBaseEdges": 0,
+      "declaredRowsInBaseEdges": 303,
       "verificationPassed": true,
       "failureReason": ""
     },
     "sourceAudit": {
-      "scanId": "20260701T122957",
-      "generatedUTC": "2026-07-01T12:29:57.251257Z",
+      "scanId": "20260701T175753",
+      "generatedUTC": "2026-07-01T17:57:53.056485Z",
       "repoCount": 12,
       "nodeRowsPrepared": 16,
       "edgeRowsPrepared": 303,
@@ -79,12 +84,12 @@
     {
       "name": "mode_is_valid",
       "passed": true,
-      "detail": "mode=apply"
+      "detail": "mode=audit"
     },
     {
       "name": "apply_runs_only_from_human_workflow_dispatch",
       "passed": true,
-      "detail": "mode=apply; github_event_name=workflow_dispatch"
+      "detail": "mode=audit; github_event_name=workflow_dispatch"
     },
     {
       "name": "source_parquet_files_exist",
@@ -149,12 +154,12 @@
       }
     },
     {
-      "name": "published_json_reconciles_exactly_against_parquet_projection",
+      "name": "planned_json_reconciles_exactly_against_parquet_projection",
       "passed": true,
-      "detail": "expectedHash=489e4b859ed73e45560110272207d21ca2d05a14324a2d2b4304b0ea678e723e; actualHash=489e4b859ed73e45560110272207d21ca2d05a14324a2d2b4304b0ea678e723e",
+      "detail": "expectedHash=489e4b859ed73e45560110272207d21ca2d05a14324a2d2b4304b0ea678e723e; plannedHash=489e4b859ed73e45560110272207d21ca2d05a14324a2d2b4304b0ea678e723e",
       "numbers": {
         "expectedHash": "489e4b859ed73e45560110272207d21ca2d05a14324a2d2b4304b0ea678e723e",
-        "actualHash": "489e4b859ed73e45560110272207d21ca2d05a14324a2d2b4304b0ea678e723e"
+        "plannedHash": "489e4b859ed73e45560110272207d21ca2d05a14324a2d2b4304b0ea678e723e"
       }
     }
   ],
@@ -169,7 +174,7 @@
   "actuallyChangedFilesUnderApply": [],
   "dataLawResult": "PASS",
   "rollbackMethod": "Revert the apply commit. The publish target is limited to live_sandbox/federation_control_ledger/data/nodes.json, live_sandbox/federation_control_ledger/data/edges.json, DEPENDENCIES.md, and the paired report/ledger evidence files.",
-  "nextAction": "Apply completed. Commit the target JSON, DEPENDENCIES.md, paired report, and append-only ledger evidence together; rollback is revert of that apply commit.",
+  "nextAction": "No apply is required unless a human wants to refresh the evidence trail.",
   "fatalErrors": [],
   "warnings": [],
   "edgeProjectionAudit": {
@@ -191,7 +196,10 @@
       "repo_reference": "repo",
       "external_reference": "external"
     },
-    "expectedHash": "489e4b859ed73e45560110272207d21ca2d05a14324a2d2b4304b0ea678e723e",
-    "actualHash": "489e4b859ed73e45560110272207d21ca2d05a14324a2d2b4304b0ea678e723e"
+    "expectedHash": "489e4b859ed73e45560110272207d21ca2d05a14324a2d2b4304b0ea678e723e"
+  },
+  "auditOnlyTargetDrift": {
+    "nodesJsonWouldChange": false,
+    "edgesJsonWouldChange": false
   }
 }
