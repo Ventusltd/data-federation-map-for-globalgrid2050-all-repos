@@ -339,7 +339,7 @@ def verify_outputs() -> dict[str, Any]:
     node_rows, node_keys = con.execute(f"SELECT count(*), count(DISTINCT scanId || '|' || nodeId) FROM read_parquet('{nodes}')").fetchone()
     edge_rows, edge_keys = con.execute(f"SELECT count(*), count(DISTINCT scanId || '|' || edgeId) FROM read_parquet('{edges}')").fetchone()
     node_nulls = con.execute(f"SELECT count(*) FROM read_parquet('{nodes}') WHERE scanId IS NULL OR nodeId IS NULL OR scanId = '' OR nodeId = ''").fetchone()[0]
-    edge_nulls = con.execute(f"SELECT count(*) FROM read_parquet('{edges}') WHERE scanId IS NULL OR edgeId IS NULL OR edgeId = '' OR edgeId = ''").fetchone()[0]
+    edge_nulls = con.execute(f"SELECT count(*) FROM read_parquet('{edges}') WHERE scanId IS NULL OR edgeId IS NULL OR scanId = '' OR edgeId = ''").fetchone()[0]
     duplicate_nodes = int(node_rows - node_keys)
     duplicate_edges = int(edge_rows - edge_keys)
     if node_nulls or edge_nulls or duplicate_nodes or duplicate_edges:
