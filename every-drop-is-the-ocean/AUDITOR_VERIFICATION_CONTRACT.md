@@ -203,13 +203,129 @@ same as total edge row count
 
 The auditor also runs `edge_endpoints_resolve` as the PO 0 regression guard. Its passing result remains `0`.
 
-### 4.4 Reserved checks to be filled as POs land
+### 4.4 `declared_repo_cartridges_present_and_exact` — PO 1
+
+Purpose: the declared base edge store is partitioned into one edge-only cartridge per eligible repository node without creating, dropping, inferring, or rewriting truth.
+
+Key tested:
+
+```text
+eligible repo node: nodeKind = github_repo and archived = false
+cartridge path: data/federation_map/cartridges/provenance=declared/repo=<owner>__<repo>/edges.parquet
+edge key: edgeId, preserving the base declared edge row
+manifest key: exact nodeId plus parentScope
+```
+
+Union completeness method:
+
+```sql
+SELECT count(*) AS total, count(DISTINCT edgeId) AS distinct_ids
+FROM 'data/federation_map/cartridges/provenance=declared/repo=*/edges.parquet';
+```
+
+Passing result for the PO 1 base:
+
+```text
+total = 303
+distinct_ids = 303
+```
+
+Exact set equality versus base method:
+
+```sql
+WITH cart AS (
+  SELECT edgeId
+  FROM 'data/federation_map/cartridges/provenance=declared/repo=*/edges.parquet'
+),
+base AS (
+  SELECT edgeId
+  FROM read_parquet('data/federation_map/current/edges.parquet')
+  WHERE provenance = 'declared'
+)
+SELECT
+  (SELECT count(*) FROM cart WHERE edgeId NOT IN (SELECT edgeId FROM base)) AS extra,
+  (SELECT count(*) FROM base WHERE edgeId NOT IN (SELECT edgeId FROM cart)) AS missing;
+```
+
+Passing result:
+
+```text
+extra = 0
+missing = 0
+```
+
+Endpoint resolution method:
+
+```sql
+SELECT count(*)
+FROM 'data/federation_map/cartridges/provenance=declared/repo=*/edges.parquet' e
+WHERE e.toNode NOT IN (SELECT nodeId FROM read_parquet('data/federation_map/current/nodes.parquet'));
+```
+
+Passing result:
+
+```text
+0
+```
+
+Declared-only method:
+
+```sql
+SELECT count(*)
+FROM 'data/federation_map/cartridges/provenance=declared/repo=*/edges.parquet'
+WHERE provenance <> 'declared' OR provenance IS NULL;
+```
+
+Passing result:
+
+```text
+0
+```
+
+Zero derived rows method:
+
+```sql
+SELECT count(*)
+FROM 'data/federation_map/cartridges/provenance=declared/repo=*/edges.parquet'
+WHERE provenance = 'derived';
+```
+
+Passing result:
+
+```text
+0
+```
+
+Cartridge count method:
+
+```sql
+SELECT count(DISTINCT regexp_extract(filename, 'repo=([^/]+)', 1))
+FROM read_parquet('data/federation_map/cartridges/provenance=declared/repo=*/edges.parquet', filename = true);
+```
+
+Passing result for the PO 1 base:
+
+```text
+12
+```
+
+The auditor also checks that the five known zero-edge repositories have directories, schema-valid zero-row `edges.parquet` files, and manifests with `edgeCount` equal to `0`:
+
+```text
+Ventusltd/Podcast-transcripts
+Ventusltd/Solar-PV-Hybrid-and-off-grid
+Ventusltd/pv-arc-protection-circuit
+Ventusltd/solar-repowering-whitepaper
+Ventusltd/youengineer-code-review
+```
+
+The auditor also checks `base_store_unchanged` by recording the md5 of `data/federation_map/current/nodes.parquet` and `data/federation_map/current/edges.parquet` before and after the cartridge apply. Both must match, and `edge_endpoints_resolve` must still return `0`.
+
+### 4.5 Reserved checks to be filled as POs land
 
 ```text
 node_key_unique
 no_null_keys
-child_edge_endpoints_resolve
-child_manifest_resolves
 base_has_no_derived_edges
 derived_overlay_separate
 every_derived_edge_has_provenance_and_evidence
@@ -219,7 +335,6 @@ Expected future scope:
 
 ```text
 node_key_unique and no_null_keys: root and child cartridges
-child_edge_endpoints_resolve and child_manifest_resolves: PO 1
 base_has_no_derived_edges and derived_overlay_separate: PO 2b and PO 3
 every_derived_edge_has_provenance_and_evidence: PO 6 and PO 3
 ```
