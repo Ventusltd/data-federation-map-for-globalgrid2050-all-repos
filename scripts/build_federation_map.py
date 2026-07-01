@@ -43,6 +43,21 @@ EXTERNAL_PATTERNS = [
 ]
 
 
+def canonical_repo_ref(ref: str) -> str:
+    # Canonicalise a repo reference to bare 'owner/repo'.
+    # 'owner/repo.git' and 'owner/repo' are the SAME GitHub repository;
+    # collapsing the clone-URL '.git' suffix is faithful transcription,
+    # not embellishment. Applied uniformly so node ids and edge endpoints match.
+    ref = ref.strip()
+    # strip a host/URL prefix if present, leaving 'owner/repo...'
+    for prefix in ('https://github.com/', 'http://github.com/', 'git@github.com:'):
+        if ref.startswith(prefix):
+            ref = ref[len(prefix):]
+    if ref.endswith('.git'):
+        ref = ref[:-4]
+    return ref
+
+
 def utcnow() -> str:
     return dt.datetime.now(dt.timezone.utc).isoformat().replace("+00:00", "Z")
 
@@ -159,7 +174,7 @@ def build_rows(owner: str, token: str | None, timeout: int, delay: float, max_fi
     fetch_errors: list[dict[str, str]] = []
 
     for repo in repos:
-        full = repo["full_name"]
+        full = canonical_repo_ref(repo["full_name"])
         name = repo["name"]
         branch = repo.get("default_branch") or "main"
         texts: dict[str, str] = {}
@@ -201,7 +216,7 @@ def build_rows(owner: str, token: str | None, timeout: int, delay: float, max_fi
         })
 
         for path, text in texts.items():
-            refs = sorted(set(REPO_REF_RE.findall(text)))
+            refs = sorted({canonical_repo_ref(r) for r in REPO_REF_RE.findall(text)})
             for target in refs:
                 if target == full:
                     continue
@@ -324,7 +339,7 @@ def verify_outputs() -> dict[str, Any]:
     node_rows, node_keys = con.execute(f"SELECT count(*), count(DISTINCT scanId || '|' || nodeId) FROM read_parquet('{nodes}')").fetchone()
     edge_rows, edge_keys = con.execute(f"SELECT count(*), count(DISTINCT scanId || '|' || edgeId) FROM read_parquet('{edges}')").fetchone()
     node_nulls = con.execute(f"SELECT count(*) FROM read_parquet('{nodes}') WHERE scanId IS NULL OR nodeId IS NULL OR scanId = '' OR nodeId = ''").fetchone()[0]
-    edge_nulls = con.execute(f"SELECT count(*) FROM read_parquet('{edges}') WHERE scanId IS NULL OR edgeId IS NULL OR scanId = '' OR edgeId = ''").fetchone()[0]
+    edge_nulls = con.execute(f"SELECT count(*) FROM read_parquet('{edges}') WHERE scanId IS NULL OR edgeId IS NULL OR edgeId = '' OR edgeId = ''").fetchone()[0]
     duplicate_nodes = int(node_rows - node_keys)
     duplicate_edges = int(edge_rows - edge_keys)
     if node_nulls or edge_nulls or duplicate_nodes or duplicate_edges:
