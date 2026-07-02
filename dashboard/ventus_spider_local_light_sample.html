@@ -66,26 +66,26 @@
   .spider-wrap::before{
     content:"";
     position:absolute;
-    inset:-.55rem;
+    inset:-.45rem;
     z-index:0;
     border-radius:50%;
-    background:radial-gradient(circle,rgba(255,238,164,.88) 0%,rgba(255,213,74,.5) 24%,rgba(255,191,40,.15) 48%,rgba(255,191,40,0) 72%);
+    background:radial-gradient(circle,rgba(255,238,164,.68) 0%,rgba(255,213,74,.34) 24%,rgba(255,191,40,.11) 48%,rgba(255,191,40,0) 72%);
     filter:blur(10px);
-    opacity:.92;
+    opacity:.78;
     pointer-events:none;
   }
   .spider-wrap::after{
     content:"";
     position:absolute;
-    z-index:2;
-    left:.24rem;
-    top:-.12rem;
-    width:.42rem;
-    height:2.85rem;
+    z-index:3;
+    left:.18rem;
+    top:-.1rem;
+    width:.32rem;
+    height:2.82rem;
     border-radius:999px;
-    background:linear-gradient(180deg,rgba(255,255,255,0) 0%,rgba(255,255,255,.88) 36%,rgba(255,246,188,1) 50%,rgba(255,255,255,.68) 64%,rgba(255,255,255,0) 100%);
-    filter:blur(1.1px);
-    transform:translateX(-.36rem) rotate(28deg);
+    background:linear-gradient(180deg,rgba(255,255,255,0) 0%,rgba(255,255,255,.9) 36%,rgba(255,246,188,1) 50%,rgba(255,255,255,.72) 64%,rgba(255,255,255,0) 100%);
+    filter:blur(.85px);
+    transform:translateX(-.3rem) rotate(28deg);
     opacity:0;
     mix-blend-mode:screen;
     animation:spiderBeam 3.8s ease-in-out infinite;
@@ -95,18 +95,40 @@
     position:relative;
     z-index:1;
     display:inline-block;
+    width:2.15rem;
+    height:2.15rem;
+    font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;
+    font-size:0;
+    line-height:1;
+  }
+  .spider-glyph::before,
+  .spider-glyph::after{
+    content:attr(data-icon);
+    position:absolute;
+    inset:0;
+    display:block;
     font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;
     font-size:2.15rem;
     line-height:1;
-    filter:sepia(1) saturate(3.2) hue-rotate(3deg) brightness(1.38) drop-shadow(0 0 1px rgba(255,255,232,.95)) drop-shadow(0 0 7px rgba(255,213,74,.62)) drop-shadow(0 0 18px rgba(255,213,74,.22)) drop-shadow(0 3px 5px rgba(0,0,0,.7));
+    transform:translateZ(0);
+  }
+  .spider-glyph::before{
+    z-index:1;
+    filter:brightness(0) saturate(100%) invert(83%) sepia(74%) saturate(857%) hue-rotate(350deg) brightness(106%) contrast(103%) drop-shadow(0 0 1px rgba(255,255,232,.95)) drop-shadow(0 0 7px rgba(255,213,74,.62)) drop-shadow(0 0 18px rgba(255,213,74,.22)) drop-shadow(0 3px 5px rgba(0,0,0,.7));
+  }
+  .spider-glyph::after{
+    z-index:2;
+    opacity:.32;
+    filter:sepia(1) saturate(1.6) hue-rotate(1deg) brightness(1.9) contrast(1.1);
+    mix-blend-mode:screen;
   }
   .label{font-size:clamp(2.2rem,9vw,4.8rem);line-height:1;color:#fff;letter-spacing:.01em}
   p{margin:24px 0 0;color:var(--muted);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.78rem;line-height:1.45;max-width:54ch}
   @keyframes spiderBeam{
-    0%,68%,100%{opacity:0;transform:translateX(-.36rem) rotate(28deg)}
+    0%,68%,100%{opacity:0;transform:translateX(-.3rem) rotate(28deg)}
     12%{opacity:.95}
-    24%{opacity:.78;transform:translateX(.26rem) rotate(28deg)}
-    36%{opacity:0;transform:translateX(.26rem) rotate(28deg)}
+    24%{opacity:.78;transform:translateX(.24rem) rotate(28deg)}
+    36%{opacity:0;transform:translateX(.24rem) rotate(28deg)}
   }
   @media (prefers-reduced-motion:reduce){.spider-wrap::after{animation:none;opacity:.28}}
 </style>
@@ -116,10 +138,10 @@
     <div class="ey">Ventus · Global Grid 2050</div>
     <h1>Ventus Spider local-light sample</h1>
     <div class="chip" aria-label="Spider local-light sample">
-      <span class="spider-wrap" aria-hidden="true"><span class="spider-glyph">🕷</span></span>
+      <span class="spider-wrap" aria-hidden="true"><span class="spider-glyph" data-icon="🕷">🕷</span></span>
       <span class="label">Spider</span>
     </div>
-    <p>Native spider glyph locked. No custom silhouette. The button stays dark; only the spider catches the solar-gold light and narrow glint.</p>
+    <p>Native spider glyph locked. No custom silhouette. The black body is suppressed by same-glyph gold material layers; only the spider catches the local solar beam.</p>
   </main>
 </body>
 </html>
