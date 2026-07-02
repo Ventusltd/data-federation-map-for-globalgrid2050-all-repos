@@ -1,6 +1,6 @@
 {
-  "generatedUTC": "2026-07-01T18:11:10.110504Z",
-  "scanId": "20260701T181027",
+  "generatedUTC": "2026-07-02T01:58:25.627372Z",
+  "scanId": "20260702T015726",
   "methodVersion": "federation_map_dna_v3_provenance_discriminator",
   "owner": "Ventusltd",
   "outputs": {
@@ -11,8 +11,8 @@
     "snapshotPath": "/home/runner/work/data-federation-map-for-globalgrid2050-all-repos/data-federation-map-for-globalgrid2050-all-repos/data/federation_map/snapshots/year=2026/month=07/week=27"
   },
   "sourceAudit": {
-    "scanId": "20260701T181027",
-    "generatedUTC": "2026-07-01T18:10:27.461373Z",
+    "scanId": "20260702T015726",
+    "generatedUTC": "2026-07-02T01:57:26.980372Z",
     "repoCount": 12,
     "nodeRowsPrepared": 16,
     "edgeRowsPrepared": 303,

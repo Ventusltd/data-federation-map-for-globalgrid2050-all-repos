@@ -1,11 +1,11 @@
 # Federation Publish Latest
 
 Schema version: `1.0`
-Generated UTC: `2026-07-01T18:11:10Z`
+Generated UTC: `2026-07-02T01:58:25Z`
 Method version: `federation_publish_json_v1_duckdb_projection`
-Mode: `apply`
+Mode: `audit`
 Repository: `Ventusltd/data-federation-map-for-globalgrid2050-all-repos`
-Commit SHA: `fa2a451dc37a2d3ef8f81defa0683db1432572d4`
+Commit SHA: `52de58c034b0ad687065786f8301e6e88d5fe145`
 
 ## Target
 
@@ -50,8 +50,8 @@ Scanner report present: `True`
 
 | Check | Result | Detail |
 |---|---:|---|
-| `mode_is_valid` | PASS | mode=apply |
-| `apply_runs_only_from_human_workflow_dispatch` | PASS | mode=apply; github_event_name=workflow_dispatch |
+| `mode_is_valid` | PASS | mode=audit |
+| `apply_runs_only_from_human_workflow_dispatch` | PASS | mode=audit; github_event_name=workflow_dispatch |
 | `source_parquet_files_exist` | PASS | nodes_parquet_exists=True; edges_parquet_exists=True |
 | `current_ui_json_shape_files_exist` | PASS | nodes_json_exists=True; edges_json_exists=True |
 | `scanner_readback_verification_passed` | PASS | scanner_outcome=success; report_present=True |
@@ -61,7 +61,7 @@ Scanner report present: `True`
 | `zero_null_node_ids` | PASS | sourceNullNodeIds=0 |
 | `every_edge_from_index_and_to_index_resolves_to_real_node` | PASS | unresolvedEdgeRows=0; edgeIndexFailures=0 |
 | `edge_count_equals_distinct_declared_edge_key_count` | PASS | projectedEdgeRows=35; projectedDistinctDeclaredEdgeKeys=35 |
-| `published_json_reconciles_exactly_against_parquet_projection` | PASS | expectedHash=489e4b859ed73e45560110272207d21ca2d05a14324a2d2b4304b0ea678e723e; actualHash=489e4b859ed73e45560110272207d21ca2d05a14324a2d2b4304b0ea678e723e |
+| `planned_json_reconciles_exactly_against_parquet_projection` | PASS | expectedHash=489e4b859ed73e45560110272207d21ca2d05a14324a2d2b4304b0ea678e723e; plannedHash=489e4b859ed73e45560110272207d21ca2d05a14324a2d2b4304b0ea678e723e |
 
 ## Planned changed files
 
@@ -90,5 +90,5 @@ Revert the apply commit. The publish target is limited to live_sandbox/federatio
 
 ## Next action
 
-Apply completed. Commit the target JSON, DEPENDENCIES.md, paired report, and append-only ledger evidence together; rollback is revert of that apply commit.
+No apply is required unless a human wants to refresh the evidence trail.
 

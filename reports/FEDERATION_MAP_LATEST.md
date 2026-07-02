@@ -1,7 +1,7 @@
 # Federation Map Latest
 
-Generated UTC: `2026-07-01T18:11:10.110504Z`
-Scan ID: `20260701T181027`
+Generated UTC: `2026-07-02T01:58:25.627372Z`
+Scan ID: `20260702T015726`
 Method: `federation_map_dna_v3_provenance_discriminator`
 Data law result: `PASS`
 
