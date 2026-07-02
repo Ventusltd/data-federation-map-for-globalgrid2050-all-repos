@@ -1,0 +1,140 @@
+name: GridBot Declared Cartridges
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_ref:
+        description: 'Branch containing the PO 1 script and PR work'
+        type: string
+        required: true
+        default: 'po1-declared-cartridges'
+      mode:
+        description: 'audit writes reports only; apply writes declared cartridges after human approval'
+        type: choice
+        required: true
+        default: audit
+        options:
+          - audit
+          - apply
+      commit_reports:
+        description: 'Commit audit report evidence when mode=audit'
+        type: choice
+        required: true
+        default: 'false'
+        options:
+          - 'true'
+          - 'false'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gridbot-declared-cartridges
+  cancel-in-progress: false
+
+env:
+  TARGET_REF: ${{ inputs.target_ref }}
+  RUN_MODE: ${{ inputs.mode }}
+  COMMIT_REPORTS: ${{ inputs.commit_reports }}
+
+jobs:
+  declared-cartridges:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: ${{ inputs.mode == 'apply' && 'federation-apply' || 'federation-audit' }}
+
+    steps:
+      - name: Checkout target ref using GridBot PAT
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GRIDBOT_PAT }}
+          ref: ${{ env.TARGET_REF }}
+
+      - name: Enforce mode and target ref
+        run: |
+          set -euo pipefail
+          echo "TARGET_REF=${TARGET_REF}"
+          echo "RUN_MODE=${RUN_MODE}"
+          echo "COMMIT_REPORTS=${COMMIT_REPORTS}"
+          if [ "${RUN_MODE}" != "audit" ] && [ "${RUN_MODE}" != "apply" ]; then
+            echo "Invalid mode: ${RUN_MODE}"
+            exit 1
+          fi
+          if [ "${TARGET_REF}" = "main" ] && [ "${RUN_MODE}" = "apply" ]; then
+            echo "Apply to main is not allowed by this runner. PO 1 target output must land on the PR branch first."
+            exit 1
+          fi
+
+      - name: Sync target ref before processing
+        run: git pull --ff-only origin "${TARGET_REF}"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install build dependencies
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          pip install duckdb
+
+      - name: Build declared cartridges report
+        run: |
+          set -euo pipefail
+          python scripts/build_declared_cartridges.py \
+            --mode "${RUN_MODE}" \
+            --repository "${GITHUB_REPOSITORY}"
+
+      - name: Upload declared cartridge report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: federation-declared-cartridges-report
+          if-no-files-found: warn
+          path: |
+            reports/FEDERATION_CARTRIDGES_LATEST.md
+            reports/json/FEDERATION_CARTRIDGES_LATEST.json
+            data/federation_map/cartridges/provenance=declared
+
+      - name: Commit declared cartridge audit evidence
+        if: ${{ success() && env.RUN_MODE == 'audit' && env.COMMIT_REPORTS == 'true' }}
+        run: |
+          set -euo pipefail
+          git config user.name "Gridbot"
+          git config user.email "gridbot@users.noreply.github.com"
+          git add \
+            reports/FEDERATION_CARTRIDGES_LATEST.md \
+            reports/json/FEDERATION_CARTRIDGES_LATEST.json
+          if git diff --cached --name-only | grep -E '^(data/federation_map/cartridges/|data/federation_map/current/|dashboard/|live_sandbox/|homepage/)'; then
+            echo "Audit commit attempted to stage target cartridges, base current store, or UI files."
+            exit 1
+          fi
+          if git diff --cached --quiet; then
+            echo "No declared cartridge audit evidence changes to commit."
+          else
+            git commit -m "data: declared-cartridges audit report"
+            git push origin HEAD:${TARGET_REF}
+          fi
+
+      - name: Commit declared cartridge apply output
+        if: ${{ success() && env.RUN_MODE == 'apply' }}
+        run: |
+          set -euo pipefail
+          git config user.name "Gridbot"
+          git config user.email "gridbot@users.noreply.github.com"
+          git add \
+            data/federation_map/cartridges/provenance=declared \
+            reports/FEDERATION_CARTRIDGES_LATEST.md \
+            reports/json/FEDERATION_CARTRIDGES_LATEST.json
+          if git diff --cached --name-only | grep -E '^(data/federation_map/current/|dashboard/|live_sandbox/|homepage/)'; then
+            echo "Apply commit attempted to stage base current store or UI files."
+            exit 1
+          fi
+          if git diff --cached --quiet; then
+            echo "No declared cartridge apply changes to commit."
+          else
+            git commit -m "data: declared-cartridges apply"
+            git push origin HEAD:${TARGET_REF}
+          fi
