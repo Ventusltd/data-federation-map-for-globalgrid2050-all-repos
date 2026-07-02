@@ -1,9 +1,9 @@
 # Federation Declared Cartridges Latest
 
 Schema version: `federation_declared_cartridges_report.v1`
-Generated UTC: `2026-07-02T02:35:30.909989Z`
+Generated UTC: `2026-07-02T03:17:14.084407Z`
 Method version: `federation_declared_cartridges_v1`
-Mode: `audit`
+Mode: `apply`
 Repository: `Ventusltd/data-federation-map-for-globalgrid2050-all-repos`
 Data-law result: `PASS`
 
