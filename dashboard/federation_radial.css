@@ -26,6 +26,20 @@
   pointer-events:none;
 }
 
+.viewbtn[aria-pressed="true"]::after{
+  content:"";
+  position:absolute;
+  left:29px;
+  top:10px;
+  width:4px;
+  height:4px;
+  border-radius:50%;
+  background:#fffbe8;
+  box-shadow:0 0 4px 2px var(--gold-hot),0 0 20px 7px rgba(255,213,74,.72),0 0 34px 12px rgba(255,153,0,.28);
+  animation:solarGlint 2.7s ease-in-out infinite;
+  pointer-events:none;
+}
+
 .spider-glyph{
   position:relative;
   display:inline-grid;
@@ -69,7 +83,8 @@
 
 @media (prefers-reduced-motion:reduce){
   .spider-glyph::after,
-  .viewbtn[aria-pressed="true"]::before{
+  .viewbtn[aria-pressed="true"]::before,
+  .viewbtn[aria-pressed="true"]::after{
     animation:none;
   }
 }
