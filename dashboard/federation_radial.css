@@ -2,106 +2,89 @@
   --gold:#ffd54a;
   --gold-hot:#fff8b0;
   --gold-glow:rgba(255,213,74,.55);
-  --ventus-spider-asset:url("./assets/ventus_spider_gold.svg?v=20260702f198");
 }
 
 .viewbtn{
   position:relative;
-  overflow:visible;
+  overflow:hidden;
 }
 
 .viewbtn[aria-pressed="true"]{
-  border-color:rgba(255,255,255,.58);
-  background:rgba(255,255,255,.055);
-  color:#fff;
-  box-shadow:none;
+  border-color:var(--gold);
+  background:linear-gradient(135deg,rgba(255,213,74,.24),rgba(255,248,176,.08));
+  color:var(--gold-hot);
+  box-shadow:0 0 0 1px rgba(255,213,74,.3),0 0 24px rgba(255,213,74,.26),inset 0 0 18px rgba(255,213,74,.08);
 }
 
-.viewbtn[aria-pressed="true"]::before,
+.viewbtn[aria-pressed="true"]::before{
+  content:"";
+  position:absolute;
+  inset:-40% -30%;
+  background:linear-gradient(115deg,transparent 35%,rgba(255,255,220,.32) 48%,transparent 61%);
+  transform:translateX(-60%);
+  animation:solarSweep 3.4s ease-in-out infinite;
+  pointer-events:none;
+}
+
 .viewbtn[aria-pressed="true"]::after{
-  content:none;
+  content:"";
+  position:absolute;
+  left:29px;
+  top:10px;
+  width:4px;
+  height:4px;
+  border-radius:50%;
+  background:#fffbe8;
+  box-shadow:0 0 4px 2px var(--gold-hot),0 0 20px 7px rgba(255,213,74,.72),0 0 34px 12px rgba(255,153,0,.28);
+  animation:solarGlint 2.7s ease-in-out infinite;
+  pointer-events:none;
 }
 
 .spider-glyph{
   position:relative;
-  display:inline-block;
-  width:2.55rem;
-  height:2.55rem;
-  flex:0 0 2.55rem;
-  margin:-.68rem .18rem -.68rem -.32rem;
-  overflow:visible;
-  color:transparent;
-  font-size:0;
-  line-height:1;
-  background:var(--ventus-spider-asset) center/contain no-repeat;
-  filter:brightness(1.18) saturate(1.2) drop-shadow(0 0 9px rgba(255,213,74,.36)) drop-shadow(0 0 18px rgba(255,213,74,.2)) drop-shadow(0 3px 5px rgba(0,0,0,.62));
+  display:inline-grid;
+  place-items:center;
+  width:1.15em;
+  height:1.15em;
+  color:var(--gold);
+  filter:sepia(1) saturate(4.8) hue-rotate(2deg) brightness(1.7) drop-shadow(0 0 3px var(--gold-hot)) drop-shadow(0 0 12px var(--gold-glow));
+  text-shadow:0 0 4px var(--gold-hot),0 0 16px var(--gold-glow);
   transform:translateZ(0);
-  isolation:isolate;
-}
-
-.spider-glyph::before{
-  content:"";
-  position:absolute;
-  inset:-.55rem;
-  z-index:-1;
-  border-radius:50%;
-  background:radial-gradient(circle at 50% 52%,rgba(255,238,164,.72) 0%,rgba(255,213,74,.34) 24%,rgba(255,191,40,.12) 45%,rgba(255,191,40,0) 72%);
-  filter:blur(9px);
-  opacity:.78;
-  animation:solarSweep 5.8s ease-in-out infinite;
-  pointer-events:none;
 }
 
 .spider-glyph::after{
   content:"";
   position:absolute;
-  top:43%;
-  left:68%;
-  width:2.05rem;
-  height:.28rem;
-  z-index:2;
-  border-radius:999px;
-  background:linear-gradient(90deg,rgba(255,255,255,0) 0%,rgba(255,255,255,.36) 17%,rgba(255,255,255,1) 45%,rgba(255,246,188,1) 57%,rgba(255,255,255,.28) 77%,rgba(255,255,255,0) 100%);
-  box-shadow:0 0 10px rgba(255,246,188,.95),0 0 20px rgba(255,213,74,.62),0 0 36px rgba(255,180,40,.24);
-  opacity:.95;
-  transform:translate(-50%,-50%) rotate(-18deg);
-  mix-blend-mode:screen;
-  animation:solarGlint 4.2s ease-in-out infinite;
+  left:55%;
+  top:30%;
+  width:4px;
+  height:4px;
+  border-radius:50%;
+  background:#fffbe8;
+  box-shadow:0 0 4px 2px var(--gold-hot),0 0 20px 7px rgba(255,213,74,.72),0 0 34px 12px rgba(255,153,0,.28);
+  animation:solarGlint 2.7s ease-in-out infinite;
   pointer-events:none;
 }
 
 .overlay.spider{
-  background:radial-gradient(circle at center,rgba(255,213,74,.045),transparent 34%),radial-gradient(circle at center,rgba(0,229,255,.045),transparent 48%);
+  background:radial-gradient(circle at center,rgba(255,213,74,.06),transparent 36%),radial-gradient(circle at center,rgba(0,229,255,.045),transparent 45%);
 }
 
 @keyframes solarGlint{
-  0%,100%{opacity:.18;transform:translate(-50%,-50%) rotate(-18deg) scaleX(.82)}
-  9%{opacity:1;transform:translate(-50%,-50%) rotate(-18deg) scaleX(1.18)}
-  17%{opacity:.56;transform:translate(-50%,-50%) rotate(-18deg) scaleX(.96)}
-  54%{opacity:.18;transform:translate(-50%,-50%) rotate(-18deg) scaleX(.82)}
+  0%,38%,100%{opacity:.18;transform:scale(.65)}
+  45%{opacity:1;transform:scale(1.4)}
+  52%{opacity:.45;transform:scale(.9)}
 }
 
 @keyframes solarSweep{
-  0%,100%{opacity:.62;transform:scale(.94)}
-  46%{opacity:.9;transform:scale(1.06)}
-}
-
-@media (max-width:680px){
-  .spider-glyph{
-    width:2.42rem;
-    height:2.42rem;
-    flex-basis:2.42rem;
-    margin:-.66rem .14rem -.66rem -.3rem;
-  }
-  .spider-glyph::after{
-    width:1.92rem;
-    height:.26rem;
-  }
+  0%,34%,100%{transform:translateX(-70%)}
+  52%{transform:translateX(70%)}
 }
 
 @media (prefers-reduced-motion:reduce){
-  .spider-glyph::before,
-  .spider-glyph::after{
+  .spider-glyph::after,
+  .viewbtn[aria-pressed="true"]::before,
+  .viewbtn[aria-pressed="true"]::after{
     animation:none;
   }
 }
