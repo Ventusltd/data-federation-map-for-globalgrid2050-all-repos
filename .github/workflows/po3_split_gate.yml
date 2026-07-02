@@ -1,0 +1,201 @@
+name: PO 3 Split Gate
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Which split PO gate to audit"
+        required: true
+        default: "po3a"
+        type: choice
+        options:
+          - po3a
+          - po3b
+          - po3c
+      commit_reports:
+        description: "Commit generated reports back to main"
+        required: true
+        default: "false"
+        type: choice
+        options:
+          - "false"
+          - "true"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: po3-split-gate
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run PO 3 split gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from __future__ import annotations
+          import hashlib
+          import json
+          import os
+          from datetime import datetime, timezone
+          from pathlib import Path
+
+          target = os.environ.get("TARGET", "po3a")
+          root = Path.cwd()
+          report_dir = root / "reports"
+          json_dir = report_dir / "json"
+          report_dir.mkdir(exist_ok=True)
+          json_dir.mkdir(parents=True, exist_ok=True)
+
+          checks = []
+          notes = []
+
+          def add(name: str, passed: bool, detail: str = "") -> None:
+              checks.append({"check": name, "pass": bool(passed), "detail": detail})
+
+          def exists(path: str) -> bool:
+              return (root / path).exists()
+
+          def read(path: str) -> str:
+              return (root / path).read_text(encoding="utf-8")
+
+          def md5(path: Path) -> str:
+              return hashlib.md5(path.read_bytes()).hexdigest()
+
+          add("audit_law_present", exists("every-drop-is-the-ocean/AUDIT_AND_COMMIT_EMPLOYERS_REQUIREMENT.md"), "binding audit law file must be present")
+          add("po_ledger_present", exists("reports/PO_LEDGER.md"), "ledger must be present for split gate context")
+          add("failed_po3_external_js_absent", not exists("dashboard/federation_radial_po3.js"), "failed PO3 external JS must not be present")
+          add("live_dashboard_present", exists("dashboard/federation_radial.html"), "live dashboard must exist")
+          add("live_css_present", exists("dashboard/federation_radial.css"), "live CSS must exist")
+
+          html = read("dashboard/federation_radial.html") if exists("dashboard/federation_radial.html") else ""
+          css = read("dashboard/federation_radial.css") if exists("dashboard/federation_radial.css") else ""
+          add("dashboard_inline_renderer_preserved", "<script src=\"federation_radial_po3.js\"" not in html and "drawSpider" in html, "dashboard should not load failed PO3 JS and should retain inline Spider renderer marker")
+          add("spider_tokens_present", all(token in html for token in ["spider", "svg", "marker", "arrow"]) or all(token in css for token in ["spider", "gold"]), "basic Spider renderer/style tokens should remain present")
+
+          mirror_dir = root / "dashboard" / "back_mirrors"
+          add("back_mirror_directory_present", mirror_dir.exists(), "dashboard/back_mirrors should exist as recovery anchor")
+          if mirror_dir.exists():
+              mirror_files = {p.name: p for p in mirror_dir.rglob("*") if p.is_file()}
+              html_mirror = mirror_files.get("federation_radial.html")
+              css_mirror = mirror_files.get("federation_radial.css")
+              if html_mirror and exists("dashboard/federation_radial.html"):
+                  add("html_matches_available_back_mirror", md5(html_mirror) == md5(root / "dashboard/federation_radial.html"), f"mirror={html_mirror}")
+              else:
+                  notes.append("No direct federation_radial.html mirror file found for byte comparison.")
+              if css_mirror and exists("dashboard/federation_radial.css"):
+                  add("css_matches_available_back_mirror", md5(css_mirror) == md5(root / "dashboard/federation_radial.css"), f"mirror={css_mirror}")
+              else:
+                  notes.append("No direct federation_radial.css mirror file found for byte comparison.")
+
+          if target == "po3a":
+              base = "data/federation_map/contents/provenance=declared/repo=Ventusltd__globalgrid2050"
+              manifest_path = f"{base}/manifest.json"
+              nodes_path = f"{base}/nodes.json"
+              edges_path = f"{base}/edges.json"
+              add("po3a_manifest_present", exists(manifest_path), manifest_path)
+              add("po3a_nodes_present", exists(nodes_path), nodes_path)
+              add("po3a_edges_present", exists(edges_path), edges_path)
+              manifest = json.loads(read(manifest_path)) if exists(manifest_path) else {}
+              nodes = json.loads(read(nodes_path)) if exists(nodes_path) else []
+              edges = json.loads(read(edges_path)) if exists(edges_path) else []
+              manifest_text = json.dumps(manifest, sort_keys=True)
+              nodes_text = json.dumps(nodes, sort_keys=True)
+              edges_text = json.dumps(edges, sort_keys=True)
+              add("po3a_manifest_stamps_monolith_sha_88894be", "88894be" in manifest_text, "manifest should tie cartridge to scanned monolith state")
+              add("po3a_generation_history_path_correct", "uk_energy_tracking_v6/generation_history" in nodes_text, "generation_history must not be treated as root folder")
+              add("po3a_why_pages_are_markdown_blobs", "why_ventusltd_building_globalgrid2050/uk_energy_tracker_purpose.md" in nodes_text and "why_ventusltd_building_globalgrid2050/physical_layer_solar_cable_integrity.md" in nodes_text, "why_ventusltd entries must be markdown blobs")
+              add("po3a_edges_have_rows", isinstance(edges, list) and len(edges) > 0, f"edgeRows={len(edges) if isinstance(edges, list) else 'not-list'}")
+              add("po3a_declared_only_text", "derived" not in (manifest_text + nodes_text + edges_text).lower(), "PO3A committed contents cartridge should not claim derived rows")
+          elif target == "po3b":
+              add("po3b_no_external_po3_js", not exists("dashboard/federation_radial_po3.js"), "PO3B must not revive failed external JS")
+              add("po3b_renderer_not_split", "federation_radial_po3.js" not in html, "PO3B must remain minimal inline dashboard diff")
+              add("po3b_focus_card_scope_only", "window.open" in html or "open(" in html, "PO3B should be judged only after focus-card open behaviour is intentionally implemented")
+          elif target == "po3c":
+              expected = "../data/federation_map/contents/provenance=declared/repo=Ventusltd__globalgrid2050/"
+              add("po3c_expected_relative_data_path_present", expected in html, "PO3C should fetch committed JSON via Pages-relative path")
+              add("po3c_no_dashboard_data_path", "dashboard/data/federation_map/contents" not in html, "PO3C must not fetch dashboard/data fallback as truth")
+              add("po3c_no_hardcoded_globalgrid_child_graph", "repd_grid_atlasv8" not in html or expected in html, "child scope should come from committed JSON, not hard-coded renderer truth")
+          else:
+              add("target_valid", False, f"unknown target {target}")
+
+          passed = all(item["pass"] for item in checks)
+          payload = {
+              "schema_version": "po3_split_gate_report.v1",
+              "generated_utc": datetime.now(timezone.utc).isoformat(),
+              "repository": "Ventusltd/data-federation-map-for-globalgrid2050-all-repos",
+              "target": target,
+              "mode": "audit",
+              "data_law_result": "PASS" if passed else "FAIL",
+              "checks": checks,
+              "notes": notes,
+              "next_action": "seek independent clean-clone receipt before closing" if passed else "fix only the failing scoped PO before moving on",
+              "rollback": "revert the workflow commit if this gate itself is wrong; do not revert target PO commits from this workflow"
+          }
+
+          json_path = json_dir / "PO3_SPLIT_GATE_LATEST.json"
+          md_path = report_dir / "PO3_SPLIT_GATE_LATEST.md"
+          json_path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+          lines = [
+              "# PO 3 Split Gate Latest",
+              "",
+              f"Schema version: `{payload['schema_version']}`",
+              f"Generated UTC: `{payload['generated_utc']}`",
+              f"Repository: `{payload['repository']}`",
+              f"Target: `{target}`",
+              "Mode: `audit`",
+              f"Data-law result: `{payload['data_law_result']}`",
+              "",
+              "## Checks",
+              "",
+              "| Check | Result | Detail |",
+              "|---|---:|---|"
+          ]
+          for item in checks:
+              result = "PASS" if item["pass"] else "FAIL"
+              detail = str(item.get("detail", "")).replace("|", "\\|")
+              lines.append(f"| `{item['check']}` | {result} | {detail} |")
+          if notes:
+              lines += ["", "## Notes", ""] + [f"- {note}" for note in notes]
+          lines += ["", "## Next action", "", payload["next_action"], "", "## Rollback", "", payload["rollback"], ""]
+          md_path.write_text("\n".join(lines), encoding="utf-8")
+          print(json.dumps(payload, indent=2))
+          if not passed:
+              raise SystemExit(1)
+          PY
+        env:
+          TARGET: ${{ inputs.target }}
+
+      - name: Upload reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: po3-split-gate-reports
+          path: |
+            reports/PO3_SPLIT_GATE_LATEST.md
+            reports/json/PO3_SPLIT_GATE_LATEST.json
+
+      - name: Commit reports if requested
+        if: ${{ always() && inputs.commit_reports == 'true' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add reports/PO3_SPLIT_GATE_LATEST.md reports/json/PO3_SPLIT_GATE_LATEST.json
+          if git diff --cached --quiet; then
+            echo "No report changes to commit."
+            exit 0
+          fi
+          git commit -m "docs: po3 split gate audit report"
+          git push
