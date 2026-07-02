@@ -9,6 +9,10 @@
   overflow:hidden;
 }
 
+.controls > span.grouplabel:nth-of-type(2){
+  display:none;
+}
+
 .viewbtn[aria-pressed="true"]{
   border-color:var(--gold);
   background:linear-gradient(135deg,rgba(255,213,74,.24),rgba(255,248,176,.08));
