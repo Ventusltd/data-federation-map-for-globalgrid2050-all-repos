@@ -1,0 +1,209 @@
+name: Spider Maya Audit Process
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'audit checks Spider Maya state; process writes the same reports with fix guidance only'
+        type: choice
+        required: true
+        default: audit
+        options:
+          - audit
+          - process
+      commit_reports:
+        description: 'Commit Spider Maya audit reports when checks pass'
+        type: choice
+        required: true
+        default: 'false'
+        options:
+          - 'true'
+          - 'false'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: spider-maya-audit-process
+  cancel-in-progress: false
+
+env:
+  RUN_MODE: ${{ inputs.mode }}
+  COMMIT_REPORTS: ${{ inputs.commit_reports }}
+
+jobs:
+  spider-maya:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: federation-audit
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Sync latest main before processing
+        run: git pull --ff-only origin main
+
+      - name: Run Spider Maya audit process
+        id: maya
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from __future__ import annotations
+
+          import datetime as dt
+          import json
+          import os
+          import subprocess
+          from pathlib import Path
+
+          ROOT = Path.cwd()
+          HTML = ROOT / "dashboard" / "federation_radial.html"
+          CSS = ROOT / "dashboard" / "federation_radial.css"
+          REPORT_MD = ROOT / "reports" / "SPIDER_MAYA_LATEST.md"
+          REPORT_JSON = ROOT / "reports" / "json" / "SPIDER_MAYA_LATEST.json"
+          METHOD_VERSION = "spider_maya_audit_process_v1"
+          SCHEMA_VERSION = "1.0"
+
+          def now() -> str:
+              return dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
+
+          def git_sha() -> str:
+              return subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+
+          def add_check(checks: list[dict[str, object]], name: str, passed: bool, detail: str) -> None:
+              checks.append({"name": name, "passed": bool(passed), "detail": detail})
+
+          run_mode = os.environ.get("RUN_MODE", "audit")
+          generated = now()
+          checks: list[dict[str, object]] = []
+          warnings: list[str] = []
+
+          html_text = HTML.read_text(encoding="utf-8") if HTML.exists() else ""
+          css_text = CSS.read_text(encoding="utf-8") if CSS.exists() else ""
+
+          add_check(checks, "mode_is_audit_or_process", run_mode in {"audit", "process"}, f"mode={run_mode}")
+          add_check(checks, "spider_html_exists", HTML.exists(), str(HTML.relative_to(ROOT)))
+          add_check(checks, "spider_css_exists", CSS.exists(), str(CSS.relative_to(ROOT)))
+
+          css_linked = "federation_radial.css" in html_text and "rel=\"stylesheet\"" in html_text or "federation_radial.css" in html_text and "rel='stylesheet'" in html_text
+          add_check(checks, "html_links_spider_maya_stylesheet", css_linked, "dashboard/federation_radial.html should load dashboard/federation_radial.css")
+
+          gold_tokens = ["--gold", "--gold-hot", "--gold-glow", "solarGlint", "solarSweep", "viewbtn"]
+          missing_gold_tokens = [token for token in gold_tokens if token not in css_text]
+          add_check(checks, "solar_gold_tokens_present", not missing_gold_tokens, f"missing={missing_gold_tokens}")
+
+          glint_present = "box-shadow" in css_text and "solarGlint" in css_text
+          add_check(checks, "tiny_glint_beam_present", glint_present, "CSS should include a tiny solar-gold glint beam on the Spider control")
+
+          snapshot_tag_present = "srcTag" in html_text and "snapshot" in html_text
+          add_check(checks, "snapshot_truth_tag_still_present", snapshot_tag_present, "Spider must still declare snapshot/live state")
+
+          if "<style>" in html_text:
+              warnings.append("Inline base style still exists in federation_radial.html. This workflow only checks the new Spider Maya stylesheet and link path; full CSS extraction can be a later cleanup.")
+
+          if not css_linked:
+              warnings.append("Maya remains: federation_radial.css exists but federation_radial.html does not yet read it. Add the stylesheet link after the inline style block.")
+
+          passed = bool(checks) and all(bool(c["passed"]) for c in checks)
+          report = {
+              "schemaVersion": SCHEMA_VERSION,
+              "generatedUTC": generated,
+              "methodVersion": METHOD_VERSION,
+              "mode": run_mode,
+              "repository": os.environ.get("GITHUB_REPOSITORY", "Ventusltd/data-federation-map-for-globalgrid2050-all-repos"),
+              "commitSHA": git_sha(),
+              "target": {
+                  "html": "dashboard/federation_radial.html",
+                  "css": "dashboard/federation_radial.css",
+              },
+              "declaredChecks": checks,
+              "warnings": warnings,
+              "dataLawResult": "PASS" if passed else "FAIL",
+              "rollbackMethod": "Revert the commit that changes dashboard/federation_radial.html or dashboard/federation_radial.css.",
+              "nextAction": "If FAIL, read the failed checks and correct only the Spider Maya visual wiring before re-running audit.",
+          }
+
+          REPORT_MD.parent.mkdir(parents=True, exist_ok=True)
+          REPORT_JSON.parent.mkdir(parents=True, exist_ok=True)
+          REPORT_JSON.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+
+          lines = [
+              "# Spider Maya Latest",
+              "",
+              f"Schema version: `{SCHEMA_VERSION}`",
+              f"Generated UTC: `{generated}`",
+              f"Method version: `{METHOD_VERSION}`",
+              f"Mode: `{run_mode}`",
+              f"Commit SHA: `{report['commitSHA']}`",
+              "",
+              "## Purpose",
+              "",
+              "Audit whether the Spider Maya solar-gold illumination layer exists and is wired into the Spider Sandbox without changing target UI files.",
+              "",
+              "## Declared checks",
+              "",
+              "| Check | Result | Detail |",
+              "|---|---:|---|",
+          ]
+          for check in checks:
+              result = "PASS" if check["passed"] else "FAIL"
+              detail = str(check["detail"]).replace("\n", " ")
+              lines.append(f"| `{check['name']}` | {result} | {detail} |")
+          lines += [
+              "",
+              "## Warnings",
+              "",
+              *(f"- {warning}" for warning in warnings) if warnings else ["- None"],
+              "",
+              "## Data-law result",
+              "",
+              f"`{report['dataLawResult']}`",
+              "",
+              "## Rollback method",
+              "",
+              report["rollbackMethod"],
+              "",
+              "## Next action",
+              "",
+              report["nextAction"],
+              "",
+          ]
+          REPORT_MD.write_text("\n".join(lines), encoding="utf-8")
+          print(json.dumps(report, indent=2))
+          raise SystemExit(0 if passed else 1)
+          PY
+
+      - name: Upload Spider Maya report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: spider-maya-report
+          if-no-files-found: warn
+          path: |
+            reports/SPIDER_MAYA_LATEST.md
+            reports/json/SPIDER_MAYA_LATEST.json
+            dashboard/federation_radial.css
+
+      - name: Commit Spider Maya audit evidence
+        if: ${{ success() && env.COMMIT_REPORTS == 'true' }}
+        run: |
+          set -euo pipefail
+          git config user.name "Gridbot"
+          git config user.email "gridbot@users.noreply.github.com"
+          git add \
+            .github/workflows/spider_maya.yml \
+            reports/SPIDER_MAYA_LATEST.md \
+            reports/json/SPIDER_MAYA_LATEST.json
+          if git diff --cached --name-only | grep -E '^(dashboard/federation_radial\.html|dashboard/federation_radial\.css)$'; then
+            echo "Audit evidence commit attempted to stage Spider UI target files."
+            exit 1
+          fi
+          if git diff --cached --quiet; then
+            echo "No Spider Maya audit evidence changes to commit."
+          else
+            git commit -m "docs: spider-maya audit report"
+            git push origin HEAD:${GITHUB_REF_NAME}
+          fi
