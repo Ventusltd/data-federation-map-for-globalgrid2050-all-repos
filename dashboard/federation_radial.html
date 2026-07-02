@@ -81,6 +81,7 @@
   .maphint{position:sticky;top:12px;left:14px;width:max-content;max-width:min(560px,calc(100vw - 32px));font-family:ui-monospace,monospace;font-size:.62rem;color:var(--muted);background:rgba(18,21,28,.8);border:1px solid var(--line);border-radius:999px;padding:5px 10px;backdrop-filter:blur(10px);z-index:5}
   @media (max-width:680px){:root{--safe-x:14px}.brand{min-width:100%}.bar{gap:8px}.count{width:100%;margin-left:0}.controls{gap:7px 10px}.seg button{padding:7px 10px;font-size:.68rem}.viewbtn{padding:6px 10px}.srctag{margin-left:0}.shell{gap:10px}.card{border-radius:12px}.name{font-size:.82rem}}
 </style>
+<link rel="stylesheet" href="federation_radial.css" />
 </head>
 <body>
   <div class="top">
@@ -96,7 +97,7 @@
         <button data-mode="out" aria-pressed="false">Outgoing</button>
         <button data-mode="in" aria-pressed="false">Incoming</button>
       </div>
-      <button class="viewbtn" id="spiderToggle" aria-pressed="false" title="Toggle optional spider view">🕷 <span id="viewLabel">Spider</span></button>
+      <button class="viewbtn" id="spiderToggle" aria-pressed="false" title="Toggle optional spider view"><span class="spider-glyph" aria-hidden="true">🕷</span><span id="viewLabel">Spider</span></button>
       <span class="grouplabel">Tap does</span>
       <div class="seg" id="actSeg" role="group" aria-label="Tap action">
         <button data-act="explore" aria-pressed="true">Explore</button>
