@@ -62,9 +62,10 @@ jobs:
           ROOT = Path.cwd()
           HTML = ROOT / "dashboard" / "federation_radial.html"
           CSS = ROOT / "dashboard" / "federation_radial.css"
+          DNA = ROOT / "ventus_spider_dna_study" / "spider_solar_glint.md"
           REPORT_MD = ROOT / "reports" / "SPIDER_MAYA_LATEST.md"
           REPORT_JSON = ROOT / "reports" / "json" / "SPIDER_MAYA_LATEST.json"
-          METHOD_VERSION = "spider_maya_audit_process_v1"
+          METHOD_VERSION = "spider_maya_audit_process_v2"
           SCHEMA_VERSION = "1.0"
 
           def now() -> str:
@@ -72,6 +73,9 @@ jobs:
 
           def git_sha() -> str:
               return subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+
+          def rel(path: Path) -> str:
+              return path.relative_to(ROOT).as_posix()
 
           def add_check(checks: list[dict[str, object]], name: str, passed: bool, detail: str) -> None:
               checks.append({"name": name, "passed": bool(passed), "detail": detail})
@@ -83,12 +87,17 @@ jobs:
 
           html_text = HTML.read_text(encoding="utf-8") if HTML.exists() else ""
           css_text = CSS.read_text(encoding="utf-8") if CSS.exists() else ""
+          dna_text = DNA.read_text(encoding="utf-8") if DNA.exists() else ""
 
           add_check(checks, "mode_is_audit_or_process", run_mode in {"audit", "process"}, f"mode={run_mode}")
-          add_check(checks, "spider_html_exists", HTML.exists(), str(HTML.relative_to(ROOT)))
-          add_check(checks, "spider_css_exists", CSS.exists(), str(CSS.relative_to(ROOT)))
+          add_check(checks, "spider_html_exists", HTML.exists(), rel(HTML))
+          add_check(checks, "spider_css_exists", CSS.exists(), rel(CSS))
+          add_check(checks, "solar_glint_dna_exists", DNA.exists(), rel(DNA))
 
-          css_linked = "federation_radial.css" in html_text and "rel=\"stylesheet\"" in html_text or "federation_radial.css" in html_text and "rel='stylesheet'" in html_text
+          css_linked = (
+              "federation_radial.css" in html_text
+              and ("rel=\"stylesheet\"" in html_text or "rel='stylesheet'" in html_text)
+          )
           add_check(checks, "html_links_spider_maya_stylesheet", css_linked, "dashboard/federation_radial.html should load dashboard/federation_radial.css")
 
           gold_tokens = ["--gold", "--gold-hot", "--gold-glow", "solarGlint", "solarSweep", "viewbtn"]
@@ -100,6 +109,16 @@ jobs:
 
           snapshot_tag_present = "srcTag" in html_text and "snapshot" in html_text
           add_check(checks, "snapshot_truth_tag_still_present", snapshot_tag_present, "Spider must still declare snapshot/live state")
+
+          dna_tokens = [
+              "# The Gold Glint Is The Starting Gun",
+              "| Genome entry | 1 |",
+              "| Entry name | Solar Gold Glint |",
+              "| Expression file | `dashboard/federation_radial.css` |",
+              "| Workflow gate | `spider_maya.yml` |",
+          ]
+          missing_dna_tokens = [token for token in dna_tokens if token not in dna_text]
+          add_check(checks, "solar_glint_dna_row_declared", not missing_dna_tokens, f"missing={missing_dna_tokens}")
 
           if "<style>" in html_text:
               warnings.append("Inline base style still exists in federation_radial.html. This workflow only checks the new Spider Maya stylesheet and link path; full CSS extraction can be a later cleanup.")
@@ -116,13 +135,14 @@ jobs:
               "repository": os.environ.get("GITHUB_REPOSITORY", "Ventusltd/data-federation-map-for-globalgrid2050-all-repos"),
               "commitSHA": git_sha(),
               "target": {
-                  "html": "dashboard/federation_radial.html",
-                  "css": "dashboard/federation_radial.css",
+                  "html": rel(HTML),
+                  "css": rel(CSS),
+                  "dna": rel(DNA),
               },
               "declaredChecks": checks,
               "warnings": warnings,
               "dataLawResult": "PASS" if passed else "FAIL",
-              "rollbackMethod": "Revert the commit that changes dashboard/federation_radial.html or dashboard/federation_radial.css.",
+              "rollbackMethod": "Revert the commit that changes dashboard/federation_radial.html, dashboard/federation_radial.css, or ventus_spider_dna_study/spider_solar_glint.md.",
               "nextAction": "If FAIL, read the failed checks and correct only the Spider Maya visual wiring before re-running audit.",
           }
 
@@ -141,7 +161,7 @@ jobs:
               "",
               "## Purpose",
               "",
-              "Audit whether the Spider Maya solar-gold illumination layer exists and is wired into the Spider Sandbox without changing target UI files.",
+              "Audit whether the Spider Maya solar-gold illumination layer exists, is declared in Spider DNA, and is wired into the Spider Sandbox without changing target UI files.",
               "",
               "## Declared checks",
               "",
@@ -152,11 +172,13 @@ jobs:
               result = "PASS" if check["passed"] else "FAIL"
               detail = str(check["detail"]).replace("\n", " ")
               lines.append(f"| `{check['name']}` | {result} | {detail} |")
+
+          warning_lines = [f"- {warning}" for warning in warnings] if warnings else ["- None"]
           lines += [
               "",
               "## Warnings",
               "",
-              *(f"- {warning}" for warning in warnings) if warnings else ["- None"],
+              *warning_lines,
               "",
               "## Data-law result",
               "",
@@ -186,6 +208,7 @@ jobs:
             reports/SPIDER_MAYA_LATEST.md
             reports/json/SPIDER_MAYA_LATEST.json
             dashboard/federation_radial.css
+            ventus_spider_dna_study/spider_solar_glint.md
 
       - name: Commit Spider Maya audit evidence
         if: ${{ success() && env.COMMIT_REPORTS == 'true' }}
@@ -197,8 +220,8 @@ jobs:
             .github/workflows/spider_maya.yml \
             reports/SPIDER_MAYA_LATEST.md \
             reports/json/SPIDER_MAYA_LATEST.json
-          if git diff --cached --name-only | grep -E '^(dashboard/federation_radial\.html|dashboard/federation_radial\.css)$'; then
-            echo "Audit evidence commit attempted to stage Spider UI target files."
+          if git diff --cached --name-only | grep -E '^(dashboard/federation_radial\.html|dashboard/federation_radial\.css|ventus_spider_dna_study/spider_solar_glint\.md)$'; then
+            echo "Audit evidence commit attempted to stage Spider Maya target files."
             exit 1
           fi
           if git diff --cached --quiet; then
