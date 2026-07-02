@@ -1,0 +1,66 @@
+{
+  "schemaVersion": "1.0",
+  "generatedUTC": "2026-07-02T11:55:47Z",
+  "methodVersion": "spider_maya_audit_process_v2",
+  "mode": "audit",
+  "repository": "Ventusltd/data-federation-map-for-globalgrid2050-all-repos",
+  "commitSHA": "e7f36063f2d84dfb88ffc0d0543560d3e4aee6df",
+  "target": {
+    "html": "dashboard/federation_radial.html",
+    "css": "dashboard/federation_radial.css",
+    "dna": "ventus_spider_dna_study/spider_solar_glint.md"
+  },
+  "declaredChecks": [
+    {
+      "name": "mode_is_audit_or_process",
+      "passed": true,
+      "detail": "mode=audit"
+    },
+    {
+      "name": "spider_html_exists",
+      "passed": true,
+      "detail": "dashboard/federation_radial.html"
+    },
+    {
+      "name": "spider_css_exists",
+      "passed": true,
+      "detail": "dashboard/federation_radial.css"
+    },
+    {
+      "name": "solar_glint_dna_exists",
+      "passed": true,
+      "detail": "ventus_spider_dna_study/spider_solar_glint.md"
+    },
+    {
+      "name": "html_links_spider_maya_stylesheet",
+      "passed": true,
+      "detail": "dashboard/federation_radial.html should load dashboard/federation_radial.css"
+    },
+    {
+      "name": "solar_gold_tokens_present",
+      "passed": true,
+      "detail": "missing=[]"
+    },
+    {
+      "name": "tiny_glint_beam_present",
+      "passed": true,
+      "detail": "CSS should include a tiny solar-gold glint beam on the Spider control"
+    },
+    {
+      "name": "snapshot_truth_tag_still_present",
+      "passed": true,
+      "detail": "Spider must still declare snapshot/live state"
+    },
+    {
+      "name": "solar_glint_dna_row_declared",
+      "passed": true,
+      "detail": "missing=[]"
+    }
+  ],
+  "warnings": [
+    "Inline base style still exists in federation_radial.html. This workflow only checks the new Spider Maya stylesheet and link path; full CSS extraction can be a later cleanup."
+  ],
+  "dataLawResult": "PASS",
+  "rollbackMethod": "Revert the commit that changes dashboard/federation_radial.html, dashboard/federation_radial.css, or ventus_spider_dna_study/spider_solar_glint.md.",
+  "nextAction": "If FAIL, read the failed checks and correct only the Spider Maya visual wiring before re-running audit."
+}
