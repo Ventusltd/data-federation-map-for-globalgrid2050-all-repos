@@ -16,7 +16,7 @@ One file carries its own styling and logic with no external libraries at all.
 
 It lives in the dashboard area of the `data-federation-map-for-globalgrid2050-all-repos` repository and is served publicly through GitHub Pages at `ventusltd.github.io`.
 
-It sits beside the promoted `federation_radial.html` as the sandbox where interface ideas are proven before promotion.
+It is currently served through `federation_radial.html`, which acts as the public Spider Sandbox while interface ideas are still being proven.
 
 ## What It Does
 
