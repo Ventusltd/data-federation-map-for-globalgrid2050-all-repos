@@ -1,0 +1,96 @@
+{
+  "checks": [
+    {
+      "check": "audit_law_present",
+      "detail": "binding audit law file must be present",
+      "pass": true
+    },
+    {
+      "check": "po_ledger_present",
+      "detail": "ledger must be present for split gate context",
+      "pass": true
+    },
+    {
+      "check": "failed_po3_external_js_absent",
+      "detail": "failed PO3 external JS must not be present",
+      "pass": true
+    },
+    {
+      "check": "live_dashboard_present",
+      "detail": "live dashboard must exist",
+      "pass": true
+    },
+    {
+      "check": "live_css_present",
+      "detail": "live CSS must exist",
+      "pass": true
+    },
+    {
+      "check": "dashboard_inline_renderer_preserved",
+      "detail": "dashboard should not load failed PO3 JS and should retain inline Spider renderer marker",
+      "pass": true
+    },
+    {
+      "check": "spider_tokens_present",
+      "detail": "basic Spider renderer/style tokens should remain present",
+      "pass": true
+    },
+    {
+      "check": "back_mirror_directory_present",
+      "detail": "dashboard/back_mirrors should exist as recovery anchor",
+      "pass": true
+    },
+    {
+      "check": "po3a_manifest_present",
+      "detail": "data/federation_map/contents/provenance=declared/repo=Ventusltd__globalgrid2050/manifest.json",
+      "pass": true
+    },
+    {
+      "check": "po3a_nodes_present",
+      "detail": "data/federation_map/contents/provenance=declared/repo=Ventusltd__globalgrid2050/nodes.json",
+      "pass": true
+    },
+    {
+      "check": "po3a_edges_present",
+      "detail": "data/federation_map/contents/provenance=declared/repo=Ventusltd__globalgrid2050/edges.json",
+      "pass": true
+    },
+    {
+      "check": "po3a_manifest_stamps_monolith_sha_88894be",
+      "detail": "manifest should tie cartridge to scanned monolith state",
+      "pass": true
+    },
+    {
+      "check": "po3a_generation_history_path_correct",
+      "detail": "generation_history must not be treated as root folder",
+      "pass": true
+    },
+    {
+      "check": "po3a_why_pages_are_markdown_blobs",
+      "detail": "why_ventusltd entries must be markdown blobs",
+      "pass": true
+    },
+    {
+      "check": "po3a_edges_have_rows",
+      "detail": "edgeRows=11",
+      "pass": true
+    },
+    {
+      "check": "po3a_declared_only_text",
+      "detail": "PO3A committed contents cartridge should not claim derived rows",
+      "pass": true
+    }
+  ],
+  "data_law_result": "PASS",
+  "generated_utc": "2026-07-03T00:10:41.417915+00:00",
+  "mode": "audit",
+  "next_action": "seek independent clean-clone receipt before closing",
+  "notes": [
+    "No direct federation_radial.html mirror file found for byte comparison.",
+    "No direct federation_radial.css mirror file found for byte comparison."
+  ],
+  "repository": "Ventusltd/data-federation-map-for-globalgrid2050-all-repos",
+  "rollback": "revert the workflow commit if this gate itself is wrong; do not revert target PO commits from this workflow",
+  "schema_version": "po3_split_gate_report.v1",
+  "target": "po3a"
+}
