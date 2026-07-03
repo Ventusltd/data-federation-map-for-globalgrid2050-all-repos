@@ -198,7 +198,11 @@ const CHILD_KEY="data-federation";
 function reshapeNodes(fc){return (fc.features||[]).map(f=>{const p=f.properties||{};const cm=p.child_manifest||null;return {label:p.label||f.id,type:p.repo_type||p.scope_type||"unknown",rag:p.rag||p.status||"grey",reason:p.status_reason||"",child:(cm&&/data-federation/.test(cm))?CHILD_KEY:null};});}
 async function loadJSON(path){const r=await fetch(DATA_BASE+path,{cache:"no-cache"});if(!r.ok)throw new Error(path+" "+r.status);return r.json();}
 async function loadRoot(){try{const [nf,ef]=await Promise.all([loadJSON("nodes.json"),loadJSON("edges.json")]);const nodes=reshapeNodes(nf);if(!nodes.length)throw new Error("empty");applyRootLinks(nodes);SCOPES.root.nodes=nodes;SCOPES.root.edges=(ef.edges||[]).map(e=>[e[0],e[1],e[2]]);return "live";}catch(e){return "snapshot";}}
-(async()=>{const src=await loadRoot();const tag=document.getElementById("srcTag");if(tag){tag.textContent=src;tag.classList.toggle("live",src==="live");}rebuildSelect();draw();})();
+const CONTENTS_BASE="../data/federation_map/contents/provenance=declared/repo=Ventusltd__globalgrid2050/";
+const MONO_GH="https://github.com/Ventusltd/globalgrid2050";
+const CONTENTS_KEY="globalgrid2050-contents";
+async function loadContents(){try{const get=p=>fetch(CONTENTS_BASE+p,{cache:"no-cache"}).then(r=>{if(!r.ok)throw new Error(p+" "+r.status);return r.json();});const [mf,nf,ef]=await Promise.all([get("manifest.json"),get("nodes.json"),get("edges.json")]);if(!Array.isArray(nf)||!nf.length)throw new Error("empty nodes");BADGE.eye_app="EYE";BADGE.sense_app="SENSE";BADGE.served_surface="PAGE";REL.contains="contains";ECSS.contains="#7da0c8";const ids={};const nodes=nf.map((n,i)=>{ids[n.id]=i;const inFed=n.path&&n.path.indexOf("data/federation_map")===0;const base=inFed?GH_BASE:MONO_GH;return {label:n.label||n.id,type:n.nodeKind||"unknown",rag:n.rag||"grey",reason:n.path||"repo root",gh:base+(n.path?"/tree/main/"+n.path.replace(/\/+$/,""):""),ext:null};});const edges=(ef||[]).filter(e=>ids[e.from]!==undefined&&ids[e.to]!==undefined).map(e=>[ids[e.from],ids[e.to],e.type||"repo"]);SCOPES[CONTENTS_KEY]={label:"globalgrid2050 contents · declared @ "+(mf.scannedMonolithSHA||"?"),nodes,edges};SCOPES.root.nodes.forEach(n=>{if(n.label==="globalgrid2050")n.child=CONTENTS_KEY;});return true;}catch(e){return false;}}
+(async()=>{const src=await loadRoot();await loadContents();const tag=document.getElementById("srcTag");if(tag){tag.textContent=src;tag.classList.toggle("live",src==="live");}rebuildSelect();draw();})();
 </script>
 </body>
 </html>
