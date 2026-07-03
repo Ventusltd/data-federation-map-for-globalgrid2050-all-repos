@@ -1,0 +1,59 @@
+name: Publish Spider Temp Sandbox
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_branch:
+        description: Source branch containing tested Spider HTML
+        required: true
+        default: spider-full-po-test
+      output_path:
+        description: Temporary sandbox HTML path on main
+        required: true
+        default: dashboard/sandbox/spider_full_po_test.html
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Copy tested branch dashboard into temp sandbox page
+        run: |
+          set -euo pipefail
+          git fetch origin "${{ inputs.source_branch }}:${{ inputs.source_branch }}"
+          mkdir -p "$(dirname '${{ inputs.output_path }}')"
+          git show "${{ inputs.source_branch }}:dashboard/federation_radial.html" > "${{ inputs.output_path }}"
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('${{ inputs.output_path }}')
+          s=p.read_text(encoding='utf-8')
+          s=s.replace('href="federation_radial.css"','href="../federation_radial.css"')
+          s=s.replace('const CONTENTS_BASE="../data/federation_map/contents/provenance=declared/repo=Ventusltd__globalgrid2050/";','const CONTENTS_BASE="../../data/federation_map/contents/provenance=declared/repo=Ventusltd__globalgrid2050/";')
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Syntax check temp page
+        run: |
+          mkdir -p reports/spider-temp
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('${{ inputs.output_path }}')
+          s=p.read_text(encoding='utf-8')
+          js=s.split('<script>',1)[1].split('</script>',1)[0]
+          Path('reports/spider-temp/temp.js').write_text(js,encoding='utf-8')
+          assert 'href="../federation_radial.css"' in s
+          assert 'const CONTENTS_BASE="../../data/federation_map/contents/provenance=declared/repo=Ventusltd__globalgrid2050/";' in s
+          PY
+          node --check reports/spider-temp/temp.js
+      - name: Commit temp sandbox page
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "${{ inputs.output_path }}"
+          git commit -m "dashboard: publish temp spider full po sandbox"
+          git push
