@@ -1,0 +1,102 @@
+name: Spider Full PO Branch Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch_name:
+        description: Test branch name
+        required: true
+        default: spider-full-po-test
+      include_sandbox:
+        description: Patch sandbox focus-card parity
+        required: true
+        type: choice
+        default: "true"
+        options: ["true", "false"]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Make test branch
+        run: git checkout -B "${{ inputs.branch_name }}"
+      - name: Patch code
+        env:
+          INCLUDE_SANDBOX: ${{ inputs.include_sandbox }}
+        run: python3 .github/scripts/spider_patch_po.py
+      - name: Check cartridge and scripts
+        run: |
+          mkdir -p reports/spider-runtime
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          base=Path('data/federation_map/contents/provenance=declared/repo=Ventusltd__globalgrid2050')
+          m=json.loads((base/'manifest.json').read_text())
+          n=json.loads((base/'nodes.json').read_text())
+          e=json.loads((base/'edges.json').read_text())
+          assert m.get('scannedMonolithSHA')=='88894be', m
+          assert len(n)==8, len(n)
+          assert len(e)==11, len(e)
+          print('cartridge OK')
+          for f in ['dashboard/federation_radial.html','dashboard/sandbox/federation_radial_uniform.html']:
+              s=Path(f).read_text(encoding='utf-8')
+              js=s.split('<script>',1)[1].split('</script>',1)[0]
+              out=Path('reports/spider-runtime')/(Path(f).name+'.js')
+              out.write_text(js,encoding='utf-8')
+              print(out)
+          PY
+          node --check reports/spider-runtime/federation_radial.html.js
+          node --check reports/spider-runtime/federation_radial_uniform.html.js
+      - name: Browser smoke test
+        run: |
+          npm init -y >/dev/null 2>&1
+          npm install --no-save playwright@1 >/dev/null
+          npx playwright install --with-deps chromium
+          python3 -m http.server 8000 > reports/spider-runtime/http-server.log 2>&1 &
+          sleep 2
+          cat > reports/spider-runtime/smoke.js <<'JS'
+          const { chromium } = require('playwright');
+          (async()=>{
+            const browser=await chromium.launch({headless:true});
+            const page=await browser.newPage({viewport:{width:1440,height:1000}});
+            const errors=[]; page.on('pageerror',e=>errors.push(String(e))); page.on('console',m=>{if(m.type()==='error')errors.push(m.text())});
+            await page.goto('http://127.0.0.1:8000/dashboard/federation_radial.html',{waitUntil:'networkidle'});
+            if(await page.locator('#focus option').count()<1) throw new Error('main focus empty');
+            if(await page.locator('.card').count()<1) throw new Error('main cards empty');
+            await page.locator('#focus').selectOption({label:'globalgrid2050'});
+            await page.waitForTimeout(300);
+            const txt=await page.locator('button.contents').first().textContent({timeout:3000});
+            if(!txt || !txt.includes('8')) throw new Error('contents button missing');
+            await page.locator('button.contents').first().click();
+            await page.waitForTimeout(300);
+            if(await page.locator('#focus option').count()!=8) throw new Error('contents count not 8');
+            await page.screenshot({path:'reports/spider-runtime/main.png',fullPage:true});
+            await page.goto('http://127.0.0.1:8000/dashboard/sandbox/federation_radial_uniform.html',{waitUntil:'networkidle'});
+            if(await page.locator('#focus option').count()<1) throw new Error('sandbox focus empty');
+            await page.screenshot({path:'reports/spider-runtime/sandbox.png',fullPage:true});
+            if(errors.length) throw new Error(errors.join(' | '));
+            await browser.close();
+          })().catch(e=>{console.error(e);process.exit(1)});
+          JS
+          node reports/spider-runtime/smoke.js
+      - name: Commit test branch
+        run: |
+          git diff --name-only | tee reports/spider-runtime/changed-files.txt
+          git diff -- dashboard/federation_radial.html dashboard/sandbox/federation_radial_uniform.html > reports/spider-runtime/spider.diff
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add dashboard/federation_radial.html dashboard/sandbox/federation_radial_uniform.html
+          git commit -m "ui: complete spider po recovery test branch"
+          git push -u origin "${{ inputs.branch_name }}"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: spider-full-po-runtime-evidence
+          path: reports/spider-runtime/
