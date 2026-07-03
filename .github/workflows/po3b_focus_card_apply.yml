@@ -1,0 +1,71 @@
+name: PO 3B Focus Card Apply
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: po3b-focus-card-apply
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply PO 3B focus card behaviour
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          
+          paths = [
+              Path("dashboard/federation_radial.html"),
+              Path("dashboard/sandbox/federation_radial_uniform.html"),
+          ]
+          
+          old_col = 'function drawColumn(focus,out,inc){const nodes=S().nodes;const shell=document.createElement("div");shell.className="shell";shell.innerHTML=`<div class="focuswrap">${cardInner(focus,{center:true})}</div>`;const section='
+          new_col = 'function drawColumn(focus,out,inc){const nodes=S().nodes;const shell=document.createElement("div");shell.className="shell";const dim=!actionable(focus),go=goLabel(focus);shell.innerHTML=`<div class="focuswrap">${cardInner(focus,{center:true,dim,go})}</div>`;shell.querySelector(".focuswrap").addEventListener("click",()=>handleTap(current));const section='
+          old_spider = 'center.innerHTML=cardInner(focus,{center:true});canvas.appendChild(center);'
+          new_spider = 'const centerDim=!actionable(focus),centerGo=goLabel(focus);center.innerHTML=cardInner(focus,{center:true,dim:centerDim,go:centerGo});center.addEventListener("click",()=>handleTap(current));canvas.appendChild(center);'
+          
+          for path in paths:
+              text = path.read_text(encoding="utf-8")
+              if text.count(old_col) != 1:
+                  raise SystemExit(f"{path}: expected one drawColumn focus target, found {text.count(old_col)}")
+              if text.count(old_spider) != 1:
+                  raise SystemExit(f"{path}: expected one drawSpider centre target, found {text.count(old_spider)}")
+              text = text.replace(old_col, new_col)
+              text = text.replace(old_spider, new_spider)
+              path.write_text(text, encoding="utf-8")
+          PY
+
+      - name: Verify scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only)"
+          printf '%s\n' "$changed"
+          test "$changed" = $'dashboard/federation_radial.html\ndashboard/sandbox/federation_radial_uniform.html'
+          git diff -- dashboard/federation_radial.html dashboard/sandbox/federation_radial_uniform.html
+
+      - name: Commit PO 3B
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add dashboard/federation_radial.html dashboard/sandbox/federation_radial_uniform.html
+          if git diff --cached --quiet; then
+            echo "No PO 3B changes to commit."
+            exit 1
+          fi
+          git commit -m "ui po3b focus card open behaviour"
+          git push
