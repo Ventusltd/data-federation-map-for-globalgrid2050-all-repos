@@ -1,0 +1,65 @@
+name: Archive Spider Version
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_path:
+        description: Source HTML file to archive
+        required: true
+        default: dashboard/sandbox/spider_full_po_test.html
+      version_name:
+        description: Version filename without .html
+        required: true
+        default: v20260704_po3b_po3c_working
+      note:
+        description: Short version note
+        required: false
+        default: Working Spider recovery after PO 3B and PO 3C test
+
+permissions:
+  contents: write
+
+jobs:
+  archive:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Archive working Spider HTML
+        run: |
+          set -euo pipefail
+          mkdir -p dashboard/sandbox/spider_versions
+          SRC="${{ inputs.source_path }}"
+          VERSION="${{ inputs.version_name }}"
+          DEST="dashboard/sandbox/spider_versions/${VERSION}.html"
+          cp "$SRC" "$DEST"
+          BYTES=$(wc -c < "$DEST" | tr -d ' ')
+          SHA=$(sha256sum "$DEST" | cut -d' ' -f1)
+          {
+            echo "version: ${VERSION}"
+            echo "source_path: ${SRC}"
+            echo "dest_path: ${DEST}"
+            echo "bytes: ${BYTES}"
+            echo "sha256: ${SHA}"
+            echo "note: ${{ inputs.note }}"
+            echo "created_utc: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          } > "dashboard/sandbox/spider_versions/${VERSION}.txt"
+          node - <<'NODE'
+          const fs=require('fs');
+          const p=process.env.DEST;
+          const s=fs.readFileSync(p,'utf8');
+          const js=s.split('<script>')[1].split('</script>')[0];
+          fs.writeFileSync('/tmp/spider-version.js',js);
+          NODE
+          node --check /tmp/spider-version.js
+        env:
+          DEST: dashboard/sandbox/spider_versions/${{ inputs.version_name }}.html
+      - name: Commit archive
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add dashboard/sandbox/spider_versions/
+          git commit -m "dashboard: archive spider version ${{ inputs.version_name }}"
+          git push
