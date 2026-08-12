@@ -55,3 +55,15 @@ additional dependencies introduced: none
 ```
 
 <!-- federation-publish-json:end -->
+
+## Trueself documentation
+
+```text
+trueself/20260812-globalgrid2050-federation-trueself-chatgpt.md
+role: governance context and operating identity
+runtime dependency: none
+build dependency: none
+authority: subordinate to the binding local employer's requirements and data contracts
+```
+
+The Trueself adds no external dependency and does not alter the federation ledger's runtime, data, workflow or source-tree dependency boundaries.
